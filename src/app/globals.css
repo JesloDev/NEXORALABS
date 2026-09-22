@@ -1,0 +1,164 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-brand: var(--brand);
+  --color-brand-accent: var(--brand-accent);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.99 0.005 170);
+  --foreground: oklch(0.18 0.02 200);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 200);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 200);
+  --primary: oklch(0.46 0.11 178);
+  --primary-foreground: oklch(0.99 0.01 170);
+  --secondary: oklch(0.96 0.02 175);
+  --secondary-foreground: oklch(0.28 0.04 180);
+  --muted: oklch(0.96 0.01 170);
+  --muted-foreground: oklch(0.52 0.02 180);
+  --accent: oklch(0.93 0.05 130);
+  --accent-foreground: oklch(0.28 0.06 135);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.90 0.01 175);
+  --input: oklch(0.90 0.01 175);
+  --ring: oklch(0.46 0.11 178);
+  --chart-1: oklch(0.46 0.11 178);
+  --chart-2: oklch(0.7 0.15 135);
+  --chart-3: oklch(0.55 0.12 90);
+  --chart-4: oklch(0.62 0.18 50);
+  --chart-5: oklch(0.5 0.2 300);
+  --sidebar: oklch(0.985 0.005 175);
+  --sidebar-foreground: oklch(0.18 0.02 200);
+  --sidebar-primary: oklch(0.46 0.11 178);
+  --sidebar-primary-foreground: oklch(0.99 0.01 170);
+  --sidebar-accent: oklch(0.95 0.02 175);
+  --sidebar-accent-foreground: oklch(0.28 0.04 180);
+  --sidebar-border: oklch(0.90 0.01 175);
+  --sidebar-ring: oklch(0.46 0.11 178);
+  --brand: oklch(0.46 0.11 178);
+  --brand-accent: oklch(0.82 0.18 125);
+}
+
+.dark {
+  /* Midnight Teal / Dark Oceanic — deep near-black teal, premium tech-forward */
+  --background: oklch(0.13 0.025 200);
+  --foreground: oklch(0.98 0.005 170);
+  --card: oklch(0.17 0.03 198);
+  --card-foreground: oklch(0.98 0.005 170);
+  --popover: oklch(0.16 0.028 198);
+  --popover-foreground: oklch(0.98 0.005 170);
+  --primary: oklch(0.78 0.15 170);
+  --primary-foreground: oklch(0.13 0.025 200);
+  --secondary: oklch(0.22 0.03 195);
+  --secondary-foreground: oklch(0.92 0.02 170);
+  --muted: oklch(0.21 0.025 195);
+  --muted-foreground: oklch(0.70 0.02 200);
+  --accent: oklch(0.30 0.06 170);
+  --accent-foreground: oklch(0.82 0.16 165);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.28 0.03 190 / 45%);
+  --input: oklch(0.24 0.03 190 / 60%);
+  --ring: oklch(0.78 0.15 170);
+  --chart-1: oklch(0.78 0.15 170);
+  --chart-2: oklch(0.72 0.15 135);
+  --chart-3: oklch(0.60 0.12 90);
+  --chart-4: oklch(0.65 0.18 50);
+  --chart-5: oklch(0.6 0.2 300);
+  --sidebar: oklch(0.15 0.025 200);
+  --sidebar-foreground: oklch(0.98 0.005 170);
+  --sidebar-primary: oklch(0.82 0.16 165);
+  --sidebar-primary-foreground: oklch(0.13 0.025 200);
+  --sidebar-accent: oklch(0.22 0.03 195);
+  --sidebar-accent-foreground: oklch(0.82 0.16 165);
+  --sidebar-border: oklch(0.28 0.03 190 / 45%);
+  --sidebar-ring: oklch(0.78 0.15 170);
+  --brand: oklch(0.82 0.16 165);
+  --brand-accent: oklch(0.85 0.18 155);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom scrollbar — used in chat lists and message panes */
+.nexora-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.nexora-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.nexora-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  border-radius: 999px;
+}
+.nexora-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+}
+
+/* Brand accent text — solid vibrant teal (matches reference; no gradient clip) */
+.brand-gradient-text {
+  color: var(--brand);
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--foreground) 6%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+/* Accent glow — used sparingly on featured cards only */
+.glow-ring {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand) 20%, transparent), 0 12px 36px -16px color-mix(in oklab, var(--brand) 45%, transparent);
+}

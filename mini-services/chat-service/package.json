@@ -1,0 +1,17 @@
+{
+  "name": "nexoralabs-chat-service",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot index.ts",
+    "start": "bun index.ts",
+    "db:generate": "bunx prisma generate --schema=../../prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.11.1",
+    "prisma": "^6.11.1",
+    "resend": "^6.28.1",
+    "socket.io": "^4.8.3"
+  }
+}
