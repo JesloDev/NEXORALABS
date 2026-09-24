@@ -19,8 +19,34 @@ export interface TypingEvent {
   isTyping: boolean
 }
 
+// Resolve where the chat service lives.
+// Priority:
+//   1. NEXT_PUBLIC_CHAT_URL env var (set on Vercel to your Render chat URL).
+//      Next.js inlines NEXT_PUBLIC_* at BUILD time, so this must be set before
+//      the production build runs — and you must redeploy if you change it.
+//   2. If running on a non-localhost host (production) and the env var wasn't
+//      inlined, return '/' (same-origin). The connection will fail and the
+//      banner will tell the user the chat service is unreachable. We do NOT
+//      use the sandbox ?XTransformPort hack on production — there's no gateway.
+//   3. Sandbox default: same origin via the Caddy gateway query param.
+function resolveChatUrl(): string {
+  const chatUrl = process.env.NEXT_PUBLIC_CHAT_URL
+  if (chatUrl) return chatUrl
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (host && host !== 'localhost' && host !== '127.0.0.1') {
+      // Production without NEXT_PUBLIC_CHAT_URL — misconfiguration.
+      return '/'
+    }
+  }
+  return '/?XTransformPort=3003'
+}
+
 export function useChatSocket(token: string | null) {
   const [connected, setConnected] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [chatUrl, setChatUrl] = useState<string>('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
   const [typing, setTyping] = useState<Record<string, { name: string; userId: string } | null>>({})
@@ -31,26 +57,34 @@ export function useChatSocket(token: string | null) {
 
   useEffect(() => {
     if (!token) return
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'],
+    const url = resolveChatUrl()
+    setChatUrl(url)
+    // Polling-first: works through any CDN/proxy (Vercel, Render). Socket.io
+    // auto-upgrades to WebSocket once the handshake succeeds. This avoids
+    // "WebSocket connection failed" errors when wss is blocked by the host.
+    const socket = io(url, {
+      transports: ['polling', 'websocket'],
       auth: { token },
       forceNew: true,
       reconnection: true,
       reconnectionAttempts: 10,
       reconnectionDelay: 1500,
-      timeout: 10000,
+      reconnectionDelayMax: 10000,
+      timeout: 15000,
     })
     socketRef.current = socket
 
-    socket.on('connect', () => setConnected(true))
+    socket.on('connect', () => { setConnected(true); setConnectionError(null) })
     socket.on('disconnect', () => setConnected(false))
+    socket.on('connect_error', (err: any) => {
+      setConnectionError(err?.message || 'Cannot reach the chat service.')
+    })
 
     socket.on('message:new', (msg: ChatMessage) => {
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) return prev
         return [...prev, msg]
       })
-      // mark read immediately if it's the active chat (so unread resets)
       if (msg.chatId === activeChatRef.current) {
         socket.emit('chat:read', { chatId: msg.chatId })
       }
@@ -65,7 +99,6 @@ export function useChatSocket(token: string | null) {
     })
 
     socket.on('chat:list-update', () => {
-      // Tell the parent to refetch chat list
       window.dispatchEvent(new CustomEvent('nexora:chat-list-update'))
     })
 
@@ -124,6 +157,8 @@ export function useChatSocket(token: string | null) {
 
   return {
     connected,
+    connectionError,
+    chatUrl,
     messages,
     setMessages: setMessagesBulk,
     appendMessages,

@@ -11,12 +11,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  Menu, PanelLeft, X, LogOut, MessageSquare, ShieldCheck, Bell, Plus, Search, Moon, Sun, Settings, Loader2,
+  Menu, PanelLeft, X, LogOut, MessageSquare, ShieldCheck, Bell, Plus, Search, Moon, Sun, Settings, Loader2, UserCircle, AlertTriangle,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useChatSocket } from '@/hooks/use-chat-socket'
 import { ChatView } from '@/components/chat/chat-view'
 import { AdminConsole } from '@/components/dashboard/admin-console'
+import { ProfileView } from '@/components/dashboard/profile-view'
 import { NewChatDialog } from '@/components/chat/new-chat-dialog'
 import { NotificationsPanel } from '@/components/dashboard/notifications-panel'
 import { cn } from '@/lib/utils'
@@ -67,7 +68,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   const [chatsLoading, setChatsLoading] = useState(true)
   const [selectedChatId, setSelectedChatId] = useState<string | null>(search.get('chat'))
   const [selectedChatDetail, setSelectedChatDetail] = useState<any>(null)
-  const [view, setView] = useState<'chat' | 'console' | 'notifications'>('chat')
+  const [view, setView] = useState<'chat' | 'console' | 'notifications' | 'profile'>('chat')
   const [sidebarOpen, setSidebarOpen] = useState(false) // mobile drawer
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false) // desktop collapse
   const [newChatOpen, setNewChatOpen] = useState(false)
@@ -275,6 +276,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
           <NavButton active={view === 'console'} onClick={() => { setView('console'); setSidebarOpen(false) }} icon={ShieldCheck} label="Admin Console" />
         )}
         <NavButton active={view === 'notifications'} onClick={() => { setView('notifications'); setSidebarOpen(false) }} icon={Bell} label="Notifications" />
+        <NavButton active={view === 'profile'} onClick={() => { setView('profile'); setSidebarOpen(false) }} icon={UserCircle} label="Profile" />
         <NavButton onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark') }} icon={mounted && theme === 'dark' ? Sun : Moon} label={mounted && theme === 'dark' ? 'Light mode' : 'Dark mode'} />
         <NavButton onClick={() => signOut({ callbackUrl: '/' })} icon={LogOut} label="Sign out" danger />
       </div>
@@ -332,6 +334,18 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
             </div>
           )}
 
+          {/* Connection-status banner — shows when the chat service can't be reached */}
+          {view === 'chat' && !tokenLoading && token && !socket.connected && (
+            <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+              {socket.connectionError ? <AlertTriangle className="size-3.5 shrink-0" /> : <Loader2 className="size-3.5 animate-spin shrink-0" />}
+              <span>
+                {socket.connectionError
+                  ? `Can't reach the chat service${socket.chatUrl ? ` (${socket.chatUrl})` : ''}. Real-time messages may be delayed.`
+                  : 'Connecting to the chat service...'}
+              </span>
+            </div>
+          )}
+
           {tokenLoading ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground">
               <Loader2 className="size-6 animate-spin" />
@@ -340,6 +354,8 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
             <AdminConsole user={user} />
           ) : view === 'notifications' ? (
             <NotificationsPanel />
+          ) : view === 'profile' ? (
+            <ProfileView user={user as any} />
           ) : selectedChatDetail ? (
             <ChatView
               chat={selectedChatDetail}
