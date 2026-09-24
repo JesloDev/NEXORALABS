@@ -31,25 +31,34 @@ function SignInForm() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const res = await signIn('credentials', {
-      redirect: false,
-      email: form.email.trim().toLowerCase(),
-      password: form.password,
-      callbackUrl,
-    })
-    setLoading(false)
-    if (res?.error) {
-      // NextAuth returns a generic error; the authorize function throws specific messages
-      // which arrive as the `error` query. We surface a friendly message.
-      toast.error('Unable to sign in. Check your credentials, or your account may be pending approval/suspended.')
-      return
-    }
-    if (res?.ok) {
-      toast.success('Welcome back!')
-      // Stay on the current origin (works via the gateway port too).
-      const dest = callbackUrl.startsWith('/') ? callbackUrl : '/dashboard'
-      window.location.href = dest
-      return
+    try {
+      const res = await signIn('credentials', {
+        redirect: false,
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        callbackUrl,
+      })
+      if (res?.error) {
+        // NextAuth returns 'CredentialsSignin' for any authorize() failure.
+        // The specific thrown Error message isn't surfaced via redirect:false,
+        // so we show a clear, actionable message.
+        toast.error('Unable to sign in. Check your credentials, or your account may be pending approval/suspended.')
+        return
+      }
+      if (res?.ok) {
+        toast.success('Welcome back!')
+        const dest = callbackUrl.startsWith('/') ? callbackUrl : '/dashboard'
+        window.location.href = dest
+        return
+      }
+      toast.error('Sign in failed. The server may be misconfigured — check that NEXTAUTH_SECRET and DATABASE_URL are set.')
+    } catch (err: any) {
+      // signIn() throws when the response can't be parsed as JSON (e.g. a 500
+      // with an empty body). Surface a clear, actionable message.
+      console.error('Sign in error:', err)
+      toast.error('Sign in failed — the server returned an error. This is usually caused by a missing NEXTAUTH_SECRET or DATABASE_URL environment variable. Contact your administrator.')
+    } finally {
+      setLoading(false)
     }
   }
 
