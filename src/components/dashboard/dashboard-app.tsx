@@ -297,9 +297,14 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Desktop sidebar */}
-        <aside className={cn('hidden md:block transition-all duration-300 border-r border-sidebar-border shrink-0', sidebarCollapsed ? 'w-0' : 'w-80')}>
-          <div className="w-80 h-full overflow-hidden">{SidebarInner}</div>
+        {/* Desktop sidebar — collapses to zero width; inner content hidden when collapsed */}
+        <aside className={cn(
+          'hidden md:block transition-all duration-300 border-sidebar-border shrink-0 overflow-hidden',
+          sidebarCollapsed ? 'w-0 border-r-0' : 'w-80 border-r',
+        )}>
+          <div className={cn('h-full transition-opacity duration-200', sidebarCollapsed ? 'w-0 opacity-0 pointer-events-none' : 'w-80 opacity-100')}>
+            {SidebarInner}
+          </div>
         </aside>
 
         {/* Mobile drawer */}
