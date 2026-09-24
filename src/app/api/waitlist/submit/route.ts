@@ -1,77 +1,77 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
-import { json, badRequest, getClientInfo, genToken } from '@/lib/api-helpers'
-import { sendEmail, emailShell, baseUrl } from '@/lib/email'
+import { json, badRequest, getClientInfo } from '@/lib/api-helpers'
+import { sendEmail, emailShell } from '@/lib/email'
 import { logActivity } from '@/lib/activity'
 
 export const dynamic = 'force-dynamic'
 
+// Finalize a waitlist submission. Requires a valid OTP that was sent to the
+// email. Waitlist entries are NOT User accounts — they never get credentials
+// or sign-in access. Only invite-link registration + admin approval creates users.
 export async function POST(req: NextRequest) {
   let body: any
-  try {
-    body = await req.json()
-  } catch {
-    return badRequest('Invalid request body')
-  }
+  try { body = await req.json() } catch { return badRequest('Invalid request body') }
   const email = (body?.email || '').trim().toLowerCase()
   const name = (body?.name || '').trim()
   const company = (body?.company || '').trim() || null
   const role = (body?.role || '').trim() || null
   const interest = (body?.interest || '').trim() || null
   const message = (body?.message || '').trim() || null
+  const otp = (body?.otp || '').trim()
 
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return badRequest('A valid email is required.')
   if (!name || name.length < 2) return badRequest('Please enter your name.')
+  if (!otp) return badRequest('Please enter the verification code sent to your email.')
 
-  // Waitlist entries are NOT users. A verified waitlist entry never creates a
-  // User record — it is a prospective-customer record only.
-  const existing = await db.waitlistEntry.findUnique({ where: { email } })
-  if (existing && existing.status === 'CONFIRMED') {
+  const entry = await db.waitlistEntry.findUnique({ where: { email } })
+  if (!entry || !entry.otp) {
+    return json({ error: 'No verification code was sent to this email. Please request a new code.' }, 400)
+  }
+  if (entry.status === 'CONFIRMED') {
     return json({ ok: true, alreadyConfirmed: true, message: "You're already on the waitlist!" })
   }
+  if (entry.otpExpiry && entry.otpExpiry < new Date()) {
+    return json({ error: 'Your verification code has expired. Please request a new one.' }, 400)
+  }
+  if (entry.otpAttempts >= 5) {
+    return json({ error: 'Too many incorrect attempts. Please request a new code.' }, 400)
+  }
+  if (entry.otp !== otp) {
+    await db.waitlistEntry.update({ where: { id: entry.id }, data: { otpAttempts: { increment: 1 } } })
+    return json({ error: 'Incorrect verification code. Please try again.' }, 400)
+  }
 
-  const token = genToken()
-  const expiry = new Date(Date.now() + 1000 * 60 * 60 * 24) // 24h
-
-  const entry = await db.waitlistEntry.upsert({
-    where: { email },
-    update: {
+  // OTP verified — finalize the waitlist entry
+  await db.waitlistEntry.update({
+    where: { id: entry.id },
+    data: {
       name, company, role, interest, message,
-      status: 'PENDING_VERIFICATION',
-      verifyToken: token,
-      verifyTokenExpiry: expiry,
-    },
-    create: {
-      email, name, company, role, interest, message,
-      status: 'PENDING_VERIFICATION',
-      verifyToken: token,
-      verifyTokenExpiry: expiry,
+      status: 'CONFIRMED',
+      confirmedAt: new Date(),
+      otp: null,
+      otpExpiry: null,
+      otpAttempts: 0,
     },
   })
 
-  const verifyUrl = `${baseUrl}/waitlist?verify=${token}`
   const { ip, userAgent } = getClientInfo(req)
-  await logActivity({ action: 'waitlist_submit', details: { email }, ip, userAgent })
+  await logActivity({ action: 'waitlist_confirmed', details: { email }, ip, userAgent })
 
   const html = emailShell({
-    title: 'Confirm your email to join the NEXORALABS waitlist',
-    preheader: 'One quick step to confirm your email.',
+    title: "You're on the NEXORALABS waitlist!",
+    preheader: 'Your email is confirmed.',
     bodyHtml: `<p>Hi ${name},</p>
-      <p>Thanks for your interest in NEXORALABS! Before we add you to the waitlist, we just need to confirm your email address is correct.</p>
-      <p>Click the button below to verify your email. This link expires in 24 hours.</p>`,
-    cta: { label: 'Verify my email', href: verifyUrl },
+      <p>Your email is confirmed and you're officially on the NEXORALABS waitlist.</p>
+      <p>We're thrilled to have you on this journey. Our team reviews every entry and will reach out as we onboard new partners and customers.</p>
+      <p>Thank you for believing in sustainable growth.</p>`,
   })
-  const emailResult = await sendEmail({
+  await sendEmail({
     to: email,
-    subject: 'Confirm your email — NEXORALABS waitlist',
+    subject: "You're on the NEXORALABS waitlist!",
     html,
-    text: `Confirm your email to join the NEXORALABS waitlist: ${verifyUrl}`,
+    text: `Hi ${name}, your email is confirmed and you're on the NEXORALABS waitlist.`,
   })
 
-  return json({
-    ok: true,
-    needsVerification: true,
-    // In dev (no Resend key) the verify URL is returned so the flow completes.
-    devVerifyUrl: (emailResult as any)?.dev ? verifyUrl : undefined,
-  })
+  return json({ ok: true, confirmed: true })
 }

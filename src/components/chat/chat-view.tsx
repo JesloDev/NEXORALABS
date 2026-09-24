@@ -189,14 +189,14 @@ export function ChatView({
         </div>
 
         <div className="flex items-center gap-1">
-          <div className="relative">
+          <div className="relative z-50">
             <Button variant="ghost" size="icon" onClick={() => setMenuOpen((o) => !o)} aria-label="More options">
               <MoreVertical className="size-4" />
             </Button>
             {menuOpen && (
               <>
-                <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-full mt-1 z-40 w-52 rounded-lg border border-border bg-popover shadow-md py-1">
+                <div className="fixed inset-0 z-[60]" onClick={() => setMenuOpen(false)} />
+                <div className="absolute right-0 top-full mt-1 z-[70] w-52 rounded-lg border border-border bg-popover shadow-lg py-1">
                   <button onClick={() => { setInfoOpen(true); setMenuOpen(false) }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted">
                     <Info className="size-4" /> Conversation info
                   </button>
