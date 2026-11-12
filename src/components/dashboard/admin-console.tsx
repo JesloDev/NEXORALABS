@@ -11,9 +11,11 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
   Users as UsersIcon, UserCheck, Link2, Megaphone, Activity, ClipboardList, ShieldCheck,
   Copy, Check, Plus, Trash2, Ban, CheckCircle2, XCircle, Crown, Loader2, ExternalLink, RefreshCw,
+  Workflow, MessageSquare, Star, Pencil, GripVertical, Eye,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -376,30 +378,45 @@ function AnnouncementsTab() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<any | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [viewing, setViewing] = useState<any | null>(null)
   const [form, setForm] = useState({ title: '', summary: '', content: '', category: 'NEWS', published: true, pinned: false })
 
   const fetch_ = async () => {
-    const res = await fetch('/api/admin/announcements')
-    const d = await res.json()
-    if (res.ok) setItems(d.announcements)
+    try {
+      const res = await fetch('/api/admin/announcements')
+      const d = await res.json()
+      if (res.ok) setItems(d.announcements)
+      else toast.error(d.error || 'Failed to load announcements.')
+    } catch { toast.error('Network error.') }
     setLoading(false)
   }
   useEffect(() => { fetch_() }, [])
   const save = async () => {
     if (!form.title || !form.summary || !form.content) return toast.error('Fill all fields.')
-    const method = editing ? 'PATCH' : 'POST'
-    const url = editing ? `/api/admin/announcements/${editing.id}` : '/api/admin/announcements'
-    const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
-    if (!res.ok) { const d = await res.json(); return toast.error(d.error) }
-    toast.success(editing ? 'Announcement updated.' : 'Announcement created.')
-    setEditing(null); setForm({ title: '', summary: '', content: '', category: 'NEWS', published: true, pinned: false })
-    fetch_()
+    setSaving(true)
+    try {
+      const method = editing ? 'PATCH' : 'POST'
+      const url = editing ? `/api/admin/announcements/${editing.id}` : '/api/admin/announcements'
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) })
+      if (!res.ok) { const d = await res.json(); return toast.error(d.error || 'Failed.') }
+      toast.success(editing ? 'Announcement updated.' : 'Announcement created.')
+      setEditing(null); setForm({ title: '', summary: '', content: '', category: 'NEWS', published: true, pinned: false })
+      fetch_()
+    } catch { toast.error('Network error.') }
+    finally { setSaving(false) }
   }
   const remove = async (id: string) => {
-    if (!confirm('Delete this announcement?')) return
-    await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
-    toast.success('Deleted.')
-    fetch_()
+    if (!confirm('Delete this announcement? This cannot be undone.')) return
+    setDeletingId(id)
+    try {
+      const res = await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
+      if (!res.ok) { const d = await res.json(); return toast.error(d.error || 'Failed.') }
+      toast.success('Announcement deleted.')
+      fetch_()
+    } catch { toast.error('Network error.') }
+    finally { setDeletingId(null) }
   }
 
   return (
@@ -421,7 +438,10 @@ function AnnouncementsTab() {
             <div className="flex items-center gap-2 pt-5"><Switch checked={form.pinned} onCheckedChange={v => setForm({ ...form, pinned: v })} /> <Label>Pinned</Label></div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={save} className="bg-primary text-primary-foreground">{editing ? 'Save changes' : 'Publish'}</Button>
+            <Button onClick={save} disabled={saving} className="bg-primary text-primary-foreground">
+              {saving ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
+              {saving ? 'Saving...' : editing ? 'Save changes' : 'Publish'}
+            </Button>
             {editing && <Button variant="outline" onClick={() => { setEditing(null); setForm({ title: '', summary: '', content: '', category: 'NEWS', published: true, pinned: false }) }}>Cancel</Button>}
           </div>
         </CardContent>
@@ -435,7 +455,7 @@ function AnnouncementsTab() {
               <Card key={a.id} className="border-border/60">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium">{a.title}</span>
                         <Badge variant="secondary" className="text-[10px]">{a.category}</Badge>
@@ -443,10 +463,14 @@ function AnnouncementsTab() {
                         <Badge variant={a.published ? 'default' : 'secondary'} className={cn('text-[10px]', !a.published && 'bg-muted text-muted-foreground')}>{a.published ? 'Published' : 'Draft'}</Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">{a.summary}</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">By {a.creator?.name || 'Unknown'} · {new Date(a.createdAt).toLocaleDateString()}</p>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <Button size="sm" variant="ghost" onClick={() => { setEditing(a); setForm({ title: a.title, summary: a.summary, content: a.content, category: a.category, published: a.published, pinned: a.pinned }) }}>Edit</Button>
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(a.id)}><Trash2 className="size-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => setViewing(a)} title="View"><Eye className="size-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setEditing(a); setForm({ title: a.title, summary: a.summary, content: a.content, category: a.category, published: a.published, pinned: a.pinned }) }} title="Edit"><Pencil className="size-4" /></Button>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" disabled={deletingId === a.id} onClick={() => remove(a.id)} title="Delete">
+                        {deletingId === a.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -455,6 +479,31 @@ function AnnouncementsTab() {
           </div>
         )}
       </div>
+
+      {/* View announcement dialog */}
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{viewing?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="text-[10px]">{viewing?.category}</Badge>
+              {viewing?.pinned && <Badge className="bg-primary/10 text-primary border-0 text-[10px]">Pinned</Badge>}
+              <Badge variant={viewing?.published ? 'default' : 'secondary'} className={cn('text-[10px]', !viewing?.published && 'bg-muted text-muted-foreground')}>{viewing?.published ? 'Published' : 'Draft'}</Badge>
+              <span className="text-xs text-muted-foreground">{viewing ? new Date(viewing.publishedAt || viewing.createdAt).toLocaleDateString() : ''}</span>
+            </div>
+            <p className="text-sm font-medium">{viewing?.summary}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{viewing?.content}</p>
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" variant="outline" onClick={() => { setEditing(viewing); setForm({ title: viewing.title, summary: viewing.summary, content: viewing.content, category: viewing.category, published: viewing.published, pinned: viewing.pinned }); setViewing(null) }}>
+                <Pencil className="size-4 mr-1" /> Edit
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setViewing(null)}>Close</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { Loader2, Menu, MessageSquarePlus, ShieldCheck, Users } from 'lucide-react'
+import { AlertTriangle, Loader2, Menu, MessageSquarePlus, ShieldCheck, UserCircle, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { useChatSocket, type ChatMessage } from '@/hooks/use-chat-socket'
 import { AdminConsole } from '@/components/dashboard/admin-console'
 import { NotificationsPanel } from '@/components/dashboard/notifications-panel'
+import { ProfileView } from '@/components/dashboard/profile-view'
 import { NewChatDialog } from '@/components/chat/new-chat-dialog'
 import { SpaceRail } from '@/components/workspace/space-rail'
 import { SpaceSidebar } from '@/components/workspace/space-sidebar'
@@ -248,7 +249,8 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   const rail = (
     <SpaceRail
       spaces={spaces} ctx={ctx} isAdmin={isAdmin} dark={dark} homeUnread={homeUnread}
-      notificationsActive={main.kind === 'notifications'} consoleActive={main.kind === 'console'} allSpacesActive={main.kind === 'all-spaces'}
+      notificationsActive={main.kind === 'notifications'} consoleActive={main.kind === 'console'} allSpacesActive={main.kind === 'all-spaces'} profileActive={main.kind === 'profile'}
+      onProfile={() => go(ctx, { kind: 'profile' })}
       onHome={goHome} onSpace={goSpace} onAllSpaces={() => go(ctx, { kind: 'all-spaces' })} onCreateSpace={() => setNewSpaceOpen(true)}
       onSearch={() => { setNavOpen(false); setSearchOpen(true) }}
       onNotifications={() => { go(ctx, { kind: 'notifications' }); loadNotifs() }}
@@ -259,7 +261,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   )
 
   const sidebar = ctx === 'home' ? (
-    <HomeSidebar user={user} dms={dms} online={sock.online} activeId={activeChatId} unreadNotifs={unreadNotifs}
+    <HomeSidebar user={user} dms={dms} online={sock.online} activeId={activeChatId} unreadNotifs={unreadNotifs} onProfile={() => select({ kind: 'profile' })}
       onSelect={(id) => select({ kind: 'chat', id })} onNew={() => setNewChatOpen(true)} />
   ) : detail ? (
     <SpaceSidebar detail={detail} main={main} canCreate={detail.access.canViewContent && !detail.space.archived}
@@ -295,6 +297,8 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
     content = <div className="h-full overflow-y-auto nexora-scroll"><AdminConsole user={user} /></div>
   } else if (main.kind === 'notifications') {
     content = <NotificationsPanel />
+  } else if (main.kind === 'profile') {
+    content = <div className="h-full overflow-y-auto nexora-scroll"><ProfileView user={user as any} /></div>
   } else {
     content = ctx === 'home'
       ? <Empty title={`Welcome, ${user.name.split(' ')[0]}`} body="Pick a conversation, start a new one, or open a space from the left rail." action={<Button onClick={() => setNewChatOpen(true)}><MessageSquarePlus className="size-4 mr-2" />New message</Button>} onOpenSidebar={openSidebar} />
@@ -319,7 +323,15 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
         </SheetContent>
       </Sheet>
 
-      <main className="flex-1 min-w-0 h-full">{content}</main>
+      <main className="flex-1 min-w-0 h-full flex flex-col">
+        {token && !sock.connected && (
+          <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300" role="status">
+            {sock.connectionError ? <AlertTriangle className="size-3.5 shrink-0" /> : <Loader2 className="size-3.5 animate-spin shrink-0" />}
+            <span>{sock.connectionError ? `Can't reach the chat service${sock.chatUrl ? ` (${sock.chatUrl})` : ''}. Real-time messages may be delayed.` : 'Connecting to the chat service…'}</span>
+          </div>
+        )}
+        <div className="flex-1 min-h-0">{content}</div>
+      </main>
 
       {threadOpen && liveThread && chat && (
         <div className="fixed inset-0 z-40 md:static md:inset-auto md:z-auto md:flex">
@@ -353,8 +365,8 @@ function Empty({ title, body, action, onOpenSidebar }: { title: string; body: st
   )
 }
 
-function HomeSidebar({ user, dms, online, activeId, unreadNotifs, onSelect, onNew }: {
-  user: DashboardUser; dms: ChatSummary[]; online: Set<string>; activeId: string | null; unreadNotifs: number
+function HomeSidebar({ user, dms, online, activeId, unreadNotifs, onProfile, onSelect, onNew }: {
+  user: DashboardUser; dms: ChatSummary[]; online: Set<string>; activeId: string | null; unreadNotifs: number; onProfile: () => void
   onSelect: (id: string) => void; onNew: () => void
 }) {
   return (
@@ -391,14 +403,15 @@ function HomeSidebar({ user, dms, online, activeId, unreadNotifs, onSelect, onNe
           )
         })}
       </div>
-      <div className="shrink-0 border-t border-sidebar-border p-3 flex items-center gap-2.5">
+      <button onClick={onProfile} aria-label="Open your profile" className="shrink-0 border-t border-sidebar-border p-3 flex items-center gap-2.5 text-left hover:bg-sidebar-accent transition-colors">
         <Avatar className="size-8"><AvatarImage src={user.image || undefined} /><AvatarFallback className="text-[11px] bg-primary/10 text-primary font-semibold">{initials(user.name)}</AvatarFallback></Avatar>
         <div className="min-w-0 flex-1">
           <div className="text-sm font-semibold truncate">{user.name}</div>
           <div className="text-[11px] text-muted-foreground truncate">{user.role === 'EMPLOYEE' ? user.title || 'Member' : user.role.replace('_', ' ').toLowerCase()}</div>
         </div>
         {unreadNotifs > 0 && <Badge variant="secondary" className="text-[10px]">{unreadNotifs}</Badge>}
-      </div>
+        <UserCircle className="size-4 text-muted-foreground" />
+      </button>
     </div>
   )
 }

@@ -29,6 +29,7 @@ export type Main =
   | { kind: 'all-spaces' }
   | { kind: 'console' }
   | { kind: 'notifications' }
+  | { kind: 'profile' }
   | { kind: 'empty' }
 
 export function initials(name?: string | null) {

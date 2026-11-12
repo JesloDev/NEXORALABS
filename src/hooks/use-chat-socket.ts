@@ -19,10 +19,26 @@ export interface ChatMessage {
 export interface TypingEvent { chatId: string; userId: string; name: string; isTyping: boolean }
 type Ack = { ok: boolean; error?: string; message?: ChatMessage }
 
+// Where the chat service lives:
+//  1. NEXT_PUBLIC_CHAT_URL (set on Vercel to the hosted chat service URL; inlined at build time).
+//  2. Production host without it → same origin, which fails and surfaces the banner (misconfiguration).
+//  3. Local/sandbox gateway default.
+function resolveChatUrl(): string {
+  const url = process.env.NEXT_PUBLIC_CHAT_URL
+  if (url) return url
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname
+    if (host && host !== 'localhost' && host !== '127.0.0.1') return '/'
+  }
+  return '/?XTransformPort=3003'
+}
+
 // One socket per session. Messages for every joined room land in a single list; the shell slices
 // by chatId / parentId. Server-side access rules (access-core) decide who may join or post.
 export function useChatSocket(token: string | null) {
   const [connected, setConnected] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
+  const [chatUrl, setChatUrl] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [typing, setTyping] = useState<Record<string, { name: string; userId: string } | null>>({})
   const [online, setOnline] = useState<Set<string>>(new Set())
@@ -31,14 +47,18 @@ export function useChatSocket(token: string | null) {
 
   useEffect(() => {
     if (!token) return
-    const socket = io('/?XTransformPort=3003', {
-      transports: ['websocket', 'polling'], auth: { token }, forceNew: true,
-      reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 1500, timeout: 10000,
+    const url = resolveChatUrl()
+    setChatUrl(url)
+    // Polling first: works through any CDN/proxy; socket.io upgrades to WebSocket when it can.
+    const socket = io(url, {
+      transports: ['polling', 'websocket'], auth: { token }, forceNew: true,
+      reconnection: true, reconnectionAttempts: 10, reconnectionDelay: 1500, reconnectionDelayMax: 10000, timeout: 15000,
     })
     socketRef.current = socket
     const bump = () => window.dispatchEvent(new CustomEvent('nexora:chat-list-update'))
 
-    socket.on('connect', () => setConnected(true))
+    socket.on('connect', () => { setConnected(true); setConnectionError(null) })
+    socket.on('connect_error', (err: Error) => setConnectionError(err?.message || 'Cannot reach the chat service.'))
     socket.on('disconnect', () => setConnected(false))
     socket.on('ready', ({ online: ids }: { online?: string[] }) => setOnline(new Set(ids || [])))
     socket.on('presence', ({ userId, online: on }: { userId: string; online: boolean }) =>
@@ -85,7 +105,7 @@ export function useChatSocket(token: string | null) {
   }, [])
 
   return {
-    connected, messages, typing, online,
+    connected, connectionError, chatUrl, messages, typing, online,
     setChatMessages, addMessages, setActiveChat,
     send: (chatId: string, content: string, parentId?: string | null) => emit('message:send', { chatId, content, parentId }),
     edit: (messageId: string, content: string) => emit('message:edit', { messageId, content }),

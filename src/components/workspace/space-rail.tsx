@@ -1,6 +1,6 @@
 'use client'
 
-import { Home, LayoutGrid, Plus, Bell, ShieldCheck, Moon, Sun, LogOut, Search } from 'lucide-react'
+import { Home, LayoutGrid, Plus, Bell, ShieldCheck, Moon, Sun, LogOut, Search, UserCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Logo } from '@/components/site/logo'
 import { SpaceTile } from './space-tile'
@@ -18,13 +18,13 @@ function RailButton({ label, active, onClick, children, badge, danger }: { label
 }
 
 export function SpaceRail({
-  spaces, ctx, onHome, onSpace, onAllSpaces, onCreateSpace, onSearch, onNotifications, onConsole, onTheme, onSignOut,
-  isAdmin, dark, homeUnread, notificationsActive, consoleActive, allSpacesActive,
+  spaces, ctx, onHome, onSpace, onAllSpaces, onCreateSpace, onSearch, onNotifications, onProfile, onConsole, onTheme, onSignOut,
+  isAdmin, dark, homeUnread, notificationsActive, consoleActive, allSpacesActive, profileActive,
 }: {
   spaces: SpaceSummary[]; ctx: 'home' | string
   onHome: () => void; onSpace: (id: string) => void; onAllSpaces: () => void; onCreateSpace: () => void
-  onSearch: () => void; onNotifications: () => void; onConsole: () => void; onTheme: () => void; onSignOut: () => void
-  isAdmin: boolean; dark: boolean; homeUnread: number; notificationsActive: boolean; consoleActive: boolean; allSpacesActive: boolean
+  onSearch: () => void; onNotifications: () => void; onProfile: () => void; onConsole: () => void; onTheme: () => void; onSignOut: () => void
+  isAdmin: boolean; dark: boolean; homeUnread: number; notificationsActive: boolean; consoleActive: boolean; allSpacesActive: boolean; profileActive: boolean
 }) {
   // members' spaces first; admin-only (not joined) spaces live in the "All spaces" directory to keep the rail short
   const mine = spaces.filter((s) => s.isMember)
@@ -57,6 +57,7 @@ export function SpaceRail({
 
       <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-white/10 w-full">
         <RailButton label="Notifications" active={notificationsActive} onClick={onNotifications}><Bell className="size-5" /></RailButton>
+        <RailButton label="Your profile" active={profileActive} onClick={onProfile}><UserCircle className="size-5" /></RailButton>
         {isAdmin && <RailButton label="Admin console" active={consoleActive} onClick={onConsole}><ShieldCheck className="size-5" /></RailButton>}
         <RailButton label={dark ? 'Light mode' : 'Dark mode'} onClick={onTheme}>{dark ? <Sun className="size-5" /> : <Moon className="size-5" />}</RailButton>
         <RailButton label="Sign out" onClick={onSignOut} danger><LogOut className="size-5" /></RailButton>

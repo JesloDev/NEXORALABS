@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   const summary = (body?.summary || '').trim()
   const content = (body?.content || '').trim()
   if (!title || !summary || !content) return badRequest('Title, summary and content are required.')
-  const publish = body?.publish === true
+  const publish = body?.published === true || body?.publish === true
   const announcement = await db.announcement.create({
     data: {
       title, summary, content,
