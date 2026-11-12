@@ -1,12 +1,14 @@
 {
   "name": "nexoralabs-chat-service",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "bun --hot index.ts",
+    "build": "prisma generate --schema=./prisma/schema.prisma",
     "start": "bun index.ts",
-    "db:generate": "bunx prisma generate --schema=../../prisma/schema.prisma"
+    "db:generate": "prisma generate --schema=./prisma/schema.prisma",
+    "postinstall": "prisma generate --schema=./prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "^6.11.1",
