@@ -46,6 +46,7 @@ export function AdminConsole({ user }: { user: DashboardUser }) {
               <TabsTrigger value="users" className="gap-1.5"><UsersIcon className="size-3.5" /> Users</TabsTrigger>
               <TabsTrigger value="approvals" className="gap-1.5"><UserCheck className="size-3.5" /> Approvals</TabsTrigger>
               <TabsTrigger value="invites" className="gap-1.5"><Link2 className="size-3.5" /> Invite Links</TabsTrigger>
+              <TabsTrigger value="companies" className="gap-1.5"><Workflow className="size-3.5" /> Companies</TabsTrigger>
               <TabsTrigger value="announcements" className="gap-1.5"><Megaphone className="size-3.5" /> News</TabsTrigger>
               <TabsTrigger value="waitlist" className="gap-1.5"><ClipboardList className="size-3.5" /> Waitlist</TabsTrigger>
               <TabsTrigger value="activity" className="gap-1.5"><Activity className="size-3.5" /> Activity</TabsTrigger>
@@ -59,6 +60,7 @@ export function AdminConsole({ user }: { user: DashboardUser }) {
             <TabsContent value="users" className="mt-0"><UsersTab currentUserId={user.id} currentRole={user.role} /></TabsContent>
             <TabsContent value="approvals" className="mt-0"><ApprovalsTab /></TabsContent>
             <TabsContent value="invites" className="mt-0"><InvitesTab /></TabsContent>
+            <TabsContent value="companies" className="mt-0"><CompaniesTab /></TabsContent>
             <TabsContent value="announcements" className="mt-0"><AnnouncementsTab /></TabsContent>
             <TabsContent value="waitlist" className="mt-0"><WaitlistTab /></TabsContent>
             <TabsContent value="activity" className="mt-0"><ActivityTab /></TabsContent>
@@ -374,6 +376,89 @@ function InvitesTab() {
 }
 
 // ── Announcements ──
+// Companies shown on the landing page hero card ("Innovation Pipeline"), stored as PipelineItem rows.
+function CompaniesTab() {
+  const [items, setItems] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/pipeline')
+      const d = await res.json()
+      if (res.ok) setItems(d.items)
+      else toast.error(d.error || 'Failed to load companies.')
+    } catch { toast.error('Network error.') }
+    finally { setLoading(false) }
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  const call = async (key: string, url: string, method: string, body?: unknown, ok?: string) => {
+    setBusy(key)
+    try {
+      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) return toast.error(d.error || 'Failed.')
+      if (ok) toast.success(ok)
+      await load()
+    } catch { toast.error('Network error.') }
+    finally { setBusy(null) }
+  }
+
+  const add = async () => {
+    const title = name.trim()
+    if (!title) return
+    await call('add', '/api/admin/pipeline', 'POST', { title, sortOrder: items.length ? Math.max(...items.map((i) => i.sortOrder)) + 1 : 0 }, 'Company added.')
+    setName('')
+  }
+  const move = async (i: number, dir: -1 | 1) => {
+    const a = items[i], b = items[i + dir]
+    if (!a || !b) return
+    // renumber so the swap is stable even when sortOrder values were equal
+    const order = items.map((x) => x.id)
+    ;[order[i], order[i + dir]] = [order[i + dir], order[i]]
+    setBusy('move')
+    await Promise.all(order.map((id, idx) => fetch(`/api/admin/pipeline/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sortOrder: idx }) })))
+    setBusy(null)
+    load()
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-3"><CardTitle className="text-base">Companies we work with</CardTitle></CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">These appear in the Innovation Pipeline card on the landing page. Only published companies are shown.</p>
+          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); add() }}>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Company name" aria-label="Company name" maxLength={80} />
+            <Button type="submit" disabled={busy === 'add' || !name.trim()}>{busy === 'add' ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4 mr-1.5" />}Add</Button>
+          </form>
+          {loading ? <Loader2 className="size-5 animate-spin text-muted-foreground" /> : items.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">No companies yet.</p>
+          ) : (
+            <ul className="divide-y divide-border rounded-lg border border-border">
+              {items.map((c, i) => (
+                <li key={c.id} className="flex items-center gap-3 px-3 py-2.5">
+                  <div className="flex flex-col">
+                    <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === 0 || !!busy} onClick={() => move(i, -1)} aria-label={`Move ${c.title} up`}>▲</button>
+                    <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === items.length - 1 || !!busy} onClick={() => move(i, 1)} aria-label={`Move ${c.title} down`}>▼</button>
+                  </div>
+                  <span className={cn('flex-1 text-sm font-medium', !c.published && 'text-muted-foreground line-through')}>{c.title}</span>
+                  <Switch checked={c.published} onCheckedChange={(v) => call(c.id, `/api/admin/pipeline/${c.id}`, 'PATCH', { published: v })} aria-label={`Show ${c.title} on the site`} />
+                  <Button size="sm" variant="ghost" title="Rename" onClick={() => { const t = prompt('Company name', c.title)?.trim(); if (t) call(c.id, `/api/admin/pipeline/${c.id}`, 'PATCH', { title: t }, 'Renamed.') }}><Pencil className="size-4" /></Button>
+                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" title="Delete" disabled={busy === c.id}
+                    onClick={() => { if (confirm(`Remove ${c.title}?`)) call(c.id, `/api/admin/pipeline/${c.id}`, 'DELETE', undefined, 'Removed.') }}><Trash2 className="size-4" /></Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 function AnnouncementsTab() {
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)

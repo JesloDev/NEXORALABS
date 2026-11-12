@@ -29,6 +29,18 @@ async function getAnnouncements() {
   }
 }
 
+async function getCompanies() {
+  try {
+    return await db.pipelineItem.findMany({
+      where: { published: true },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+      select: { id: true, title: true },
+    })
+  } catch {
+    return []
+  }
+}
+
 const categoryColor: Record<string, string> = {
   NEWS: 'bg-primary/10 text-primary',
   UPDATE: 'bg-sky-500/10 text-sky-600 dark:text-sky-300',
@@ -38,7 +50,7 @@ const categoryColor: Record<string, string> = {
 }
 
 export default async function LandingPage() {
-  const announcements = await getAnnouncements()
+  const [announcements, companies] = await Promise.all([getAnnouncements(), getCompanies()])
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -108,14 +120,18 @@ export default async function LandingPage() {
                         <span className="size-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" /> Live
                       </Badge>
                     </div>
-                    <ul className="space-y-2">
-                      {['RUSHNG', 'DON Fashion', 'Life Renewed Initiative (LRI)', 'SAFE-R', 'Chronikon', 'CreCreativeAfrica', 'ATERO'].map((name) => (
-                        <li key={name} className="rounded-xl border border-border/60 px-3 py-2.5 flex items-center gap-3">
-                          <span className="size-7 rounded-lg bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0" aria-hidden>{name[0]}</span>
-                          <span className="text-sm font-medium">{name}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {companies.length > 0 ? (
+                      <ul className="space-y-2">
+                        {companies.map((c) => (
+                          <li key={c.id} className="rounded-xl border border-border/60 px-3 py-2.5 flex items-center gap-3">
+                            <span className="size-7 rounded-lg bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0" aria-hidden>{c.title[0]}</span>
+                            <span className="text-sm font-medium">{c.title}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground rounded-xl border border-dashed border-border/60 px-3 py-6 text-center">Partner companies will appear here.</p>
+                    )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                       <ShieldCheck className="size-3.5 text-primary" />
                       Every solution mapped to measurable SDG targets.
