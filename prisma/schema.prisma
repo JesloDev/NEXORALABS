@@ -1,12 +1,19 @@
 // NEXORALABS — company platform data model
-// Prisma + SQLite. Enums are stored as strings.
+//
+// This schema works with PostgreSQL (Aiven prod). All tables/enums are prefixed
+// with nexora_ via @@map so they coexist with other projects on the same DB.
+// To switch to SQLite (local dev): change provider to "sqlite" and remove the
+// @@map directives (or keep them — SQLite ignores table-name casing).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  // ── LOCAL DEV (SQLite) ──
+  // provider = "sqlite"
+  // ── AIVEN POSTGRES ──
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -16,6 +23,7 @@ enum Role {
   SUPER_ADMIN
   ADMIN
   EMPLOYEE
+  @@map("nexora_role")
 }
 
 // PENDING    — registered via invite, email verified, awaiting admin approval
@@ -27,48 +35,56 @@ enum UserStatus {
   ACTIVE
   SUSPENDED
   REJECTED
+  @@map("nexora_user_status")
 }
 
 model User {
-  id       String     @id @default(cuid())
-  email    String     @unique
-  name     String
-  password String? // credentials login (null only for OAuth — not used here)
-  image    String?
-  role     Role       @default(EMPLOYEE)
-  status   UserStatus @default(PENDING)
+  id            String     @id @default(cuid())
+  email         String     @unique
+  name          String
+  password      String? // credentials login (null only for OAuth — not used here)
+  image         String?
+  role          Role       @default(EMPLOYEE)
+  status        UserStatus @default(PENDING)
 
   // verification & approval lifecycle
-  emailVerified     DateTime?
-  verifyToken       String?
-  verifyTokenExpiry DateTime?
-  approvedBy        String? // admin user id
-  approvedAt        DateTime?
-  rejectedAt        DateTime?
-  rejectedReason    String?
+  emailVerified DateTime?
+  verifyToken        String?
+  verifyTokenExpiry  DateTime?
+  approvedBy    String? // admin user id
+  approvedAt    DateTime?
+  rejectedAt    DateTime?
+  rejectedReason String?
+
+  // password reset (forgot-password flow)
+  passwordResetToken       String?
+  passwordResetTokenExpiry DateTime?
+  passwordChangedAt        DateTime?
 
   // profile
-  title      String? // job title
-  department String?
-  phone      String?
-  bio        String?
-  location   String?
+  title       String? // job title
+  department  String?
+  phone       String?
+  bio         String?
+  location    String?
 
   // tracking
   lastLoginAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   // relationships
-  inviteLinkId  String?
-  inviteLink    InviteLink?    @relation("InviteRegistrations", fields: [inviteLinkId], references: [id])
-  chats         ChatMember[]
-  messages      Message[]
-  createdChats  Chat[]         @relation("ChatCreator")
-  inviteLinks   InviteLink[]   @relation("InviteCreator")
+  inviteLinkId String?
+  inviteLink   InviteLink? @relation("InviteRegistrations", fields: [inviteLinkId], references: [id])
+  chats        ChatMember[]
+  messages     Message[]
+  createdChats Chat[]       @relation("ChatCreator")
+  inviteLinks  InviteLink[] @relation("InviteCreator")
   announcements Announcement[]
-  activityLogs  ActivityLog[]
+  activityLogs ActivityLog[]
   notifications Notification[]
+  pipelineItems PipelineItem[] @relation("PipelineCreator")
+  comments       Comment[]      @relation("CommentCreator")
   spaces        SpaceMember[]
   createdSpaces Space[]        @relation("SpaceCreator")
   reactions     Reaction[]
@@ -77,6 +93,7 @@ model User {
 
   @@index([status])
   @@index([role])
+  @@map("nexora_users")
 }
 
 // ───────────────────────── Waitlist ─────────────────────────
@@ -86,24 +103,31 @@ enum WaitlistStatus {
   PENDING_VERIFICATION
   CONFIRMED
   CONTACTED
+  @@map("nexora_waitlist_status")
 }
 
 model WaitlistEntry {
-  id                String         @id @default(cuid())
-  email             String         @unique
-  name              String
-  company           String?
-  role              String? // job role of the prospect
-  interest          String? // what they want from NEXORALABS
-  message           String?
-  status            WaitlistStatus @default(PENDING_VERIFICATION)
-  verifyToken       String?
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  company   String?
+  role      String? // job role of the prospect
+  interest  String? // what they want from NEXORALABS
+  message   String?
+  status    WaitlistStatus @default(PENDING_VERIFICATION)
+  // Legacy link-based verification (kept for backward compat)
+  verifyToken      String?
   verifyTokenExpiry DateTime?
-  confirmedAt       DateTime?
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  // OTP-based verification (preferred flow)
+  otp         String?
+  otpExpiry   DateTime?
+  otpAttempts Int      @default(0)
+  confirmedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([status])
+  @@map("nexora_waitlist")
 }
 
 // ───────────────────────── Invite links ─────────────────────────
@@ -123,9 +147,10 @@ model InviteLink {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
 
-  users User[] @relation("InviteRegistrations")
+  users       User[]     @relation("InviteRegistrations")
 
   @@index([createdBy])
+  @@map("nexora_invite_links")
 }
 
 // ───────────────────────── Chats / Messaging ─────────────────────────
@@ -136,11 +161,13 @@ enum ChatType {
   DIRECT
   GROUP
   CHANNEL // lives inside a Space
+  @@map("nexora_chat_type")
 }
 
 enum ChatMemberRole {
   ADMIN // group admin (manages members)
   MEMBER
+  @@map("nexora_chat_member_role")
 }
 
 model Chat {
@@ -161,34 +188,36 @@ model Chat {
   isPrivate Boolean @default(false) // private channel: members + org admins only
   archived  Boolean @default(false)
 
-  members  ChatMember[]
-  messages Message[]
+  members     ChatMember[]
+  messages    Message[]
 
   @@index([type])
   @@index([spaceId])
+  @@map("nexora_chats")
 }
 
 model ChatMember {
-  id         String         @id @default(cuid())
-  chatId     String
-  userId     String
-  role       ChatMemberRole @default(MEMBER)
-  joinedAt   DateTime       @default(now())
+  id      String        @id @default(cuid())
+  chatId  String
+  userId  String
+  role    ChatMemberRole @default(MEMBER)
+  joinedAt DateTime      @default(now())
   lastReadAt DateTime?
 
-  chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chat    Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  user    User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([chatId, userId])
   @@index([userId])
+  @@map("nexora_chat_members")
 }
 
 model Message {
-  id        String    @id @default(cuid())
+  id        String   @id @default(cuid())
   chatId    String
   senderId  String
   content   String
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
   deletedAt DateTime? // soft delete (user removed their message)
   editedAt  DateTime?
 
@@ -198,42 +227,146 @@ model Message {
   replies   Message[]  @relation("Thread")
   reactions Reaction[]
 
-  chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  chat      Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  sender    User @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([chatId, createdAt])
   @@index([parentId])
   @@index([senderId])
+  @@map("nexora_messages")
 }
 
-model Reaction {
+// ───────────────────────── Announcements ─────────────────────────
+
+enum AnnouncementCategory {
+  NEWS
+  UPDATE
+  EVENT
+  PARTNERSHIP
+  ACHIEVEMENT
+  @@map("nexora_announcement_category")
+}
+
+model Announcement {
+  id         String   @id @default(cuid())
+  title      String
+  summary    String
+  content    String
+  category   AnnouncementCategory @default(NEWS)
+  imageUrl   String?
+  published  Boolean  @default(false)
+  publishedAt DateTime?
+  pinned     Boolean  @default(false)
+  createdBy   String
+  creator     User     @relation(fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, publishedAt])
+  @@map("nexora_announcements")
+}
+
+// ───────────────────────── Activity log ─────────────────────────
+// Row-level scoping: entries are visible to the owner and to admins only.
+
+model ActivityLog {
   id        String   @id @default(cuid())
-  messageId String
-  userId    String
-  emoji     String
+  userId    String? // null = system
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  details   String // JSON string
+  ip        String?
+  userAgent String?
   createdAt DateTime @default(now())
 
-  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([messageId, userId, emoji])
-  @@index([messageId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("nexora_activity_logs")
 }
 
-// ───────────────────────── Spaces (company / team partitions) ─────────────────────────
-// A Space is a company or team partition holding channels (Slack-style chat) and
-// pages (Notion-style docs). Org admins (ADMIN / SUPER_ADMIN) can see and open
-// EVERY space, including private ones, regardless of membership.
+// ───────────────────────── Notifications ─────────────────────────
+// In-app notification mirror of emails + general notices.
+
+enum NotificationType {
+  LOGIN
+  ACCOUNT_CHANGE
+  NEW_MESSAGE
+  APPROVAL
+  WAITLIST_CONFIRM
+  SYSTEM
+  @@map("nexora_notification_type")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  body      String
+  read      Boolean          @default(false)
+  link      String?
+  metadata  String? // JSON
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+  @@map("nexora_notifications")
+}
+
+// ───────────────────────── Innovation Pipeline ─────────────────────────
+// Admin-managed list of solution tracks shown on the landing page hero card.
+
+model PipelineItem {
+  id          String   @id @default(cuid())
+  title       String
+  sdgTags     String   // e.g. "SDG 2 · 13"
+  progress    Int      @default(0) // 0-100
+  iconName    String   @default("Leaf") // lucide icon name
+  published   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdBy   String
+  creator     User     @relation("PipelineCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, sortOrder])
+  @@map("nexora_pipeline_items")
+}
+
+// ───────────────────────── Comments / Testimonials ─────────────────────────
+// Admin-managed comments/testimonials displayed on the landing page.
+
+model Comment {
+  id          String   @id @default(cuid())
+  authorName  String
+  authorRole  String?  // e.g. "Partner Founder"
+  authorCompany String?
+  content     String
+  rating      Int      @default(5) // 1-5
+  published   Boolean  @default(true)
+  featured    Boolean  @default(false)
+  createdBy   String
+  creator     User     @relation("CommentCreator", fields: [createdBy], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([published, featured])
+  @@map("nexora_comments")
+}
+
+// ───────────────────────── Spaces / Pages / Reactions ─────────────────────────
 
 enum SpaceVisibility {
   PUBLIC // any active user can discover and join
   PRIVATE // invite only (org admins can still open it)
+  @@map("nexora_space_visibility")
 }
 
 enum SpaceRole {
   OWNER
   ADMIN
   MEMBER
+  @@map("nexora_space_role")
 }
 
 model Space {
@@ -255,6 +388,7 @@ model Space {
   pages    Page[]
 
   @@index([visibility])
+  @@map("nexora_spaces")
 }
 
 model SpaceMember {
@@ -269,6 +403,7 @@ model SpaceMember {
 
   @@unique([spaceId, userId])
   @@index([userId])
+  @@map("nexora_space_members")
 }
 
 // Notion-style document. Nested via parentId. Content is Markdown.
@@ -293,76 +428,21 @@ model Page {
   children Page[] @relation("PageTree")
 
   @@index([spaceId, parentId])
+  @@map("nexora_pages")
 }
 
-// ───────────────────────── Announcements ─────────────────────────
 
-enum AnnouncementCategory {
-  NEWS
-  UPDATE
-  EVENT
-  PARTNERSHIP
-  ACHIEVEMENT
-}
-
-model Announcement {
-  id          String               @id @default(cuid())
-  title       String
-  summary     String
-  content     String
-  category    AnnouncementCategory @default(NEWS)
-  imageUrl    String?
-  published   Boolean              @default(false)
-  publishedAt DateTime?
-  pinned      Boolean              @default(false)
-  createdBy   String
-  creator     User                 @relation(fields: [createdBy], references: [id])
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
-
-  @@index([published, publishedAt])
-}
-
-// ───────────────────────── Activity log ─────────────────────────
-// Row-level scoping: entries are visible to the owner and to admins only.
-
-model ActivityLog {
+model Reaction {
   id        String   @id @default(cuid())
-  userId    String? // null = system
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  action    String
-  details   String // JSON string
-  ip        String?
-  userAgent String?
+  messageId String
+  userId    String
+  emoji     String
   createdAt DateTime @default(now())
 
-  @@index([userId])
-  @@index([createdAt])
-}
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-// ───────────────────────── Notifications ─────────────────────────
-// In-app notification mirror of emails + general notices.
-
-enum NotificationType {
-  LOGIN
-  ACCOUNT_CHANGE
-  NEW_MESSAGE
-  APPROVAL
-  WAITLIST_CONFIRM
-  SYSTEM
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      NotificationType
-  title     String
-  body      String
-  read      Boolean          @default(false)
-  link      String?
-  metadata  String? // JSON
-  createdAt DateTime         @default(now())
-
-  @@index([userId, read])
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("nexora_reactions")
 }
