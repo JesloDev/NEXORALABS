@@ -71,13 +71,23 @@ export function SiteNav() {
           </Button>
         </div>
 
-        <button
-          className="md:hidden p-2 rounded-md hover:bg-muted"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Toggle menu"
-        >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="md:hidden flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Toggle theme"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {mounted && theme === 'dark' ? <Sun className="size-5" /> : <Moon className="size-5" />}
+          </Button>
+          <button
+            className="p-2 rounded-md hover:bg-muted"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Toggle menu"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </nav>
 
       {open && (
