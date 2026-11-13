@@ -42,7 +42,8 @@ export async function POST(req: NextRequest) {
     const { ip, userAgent } = getClientInfo(req)
     await logActivity({ userId: user.id, action: 'password_reset_request', details: { email }, ip, userAgent })
 
-    if ((result as any)?.dev) {
+    // Only ever expose the link locally; in production a missing mail key must not hand out reset links.
+    if ((result as any)?.dev && process.env.NODE_ENV !== 'production') {
       return json({ ok: true, devResetUrl: resetUrl })
     }
   }
