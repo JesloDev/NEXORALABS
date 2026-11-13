@@ -6,7 +6,6 @@ import { getActiveSessionUser } from '@/lib/session'
 export const dynamic = 'force-dynamic'
 
 // Home list: direct messages and groups only. Channels live inside Spaces (/api/spaces/:id).
-// SUPER_ADMIN additionally sees every DM/group read-only (pre-existing monitoring rule).
 export async function GET() {
   const me = await getActiveSessionUser()
   if (!me) return json({ error: 'Unauthorized' }, 401)
@@ -18,7 +17,7 @@ export async function GET() {
   const mine = new Map(memberRecords.map((m) => [m.chatId, m]))
 
   const chats = await db.chat.findMany({
-    where: { type: { in: ['DIRECT', 'GROUP'] }, ...(me.role === 'SUPER_ADMIN' ? {} : { id: { in: [...mine.keys()] } }) },
+    where: { type: { in: ['DIRECT', 'GROUP'] }, id: { in: [...mine.keys()] } },
     orderBy: { updatedAt: 'desc' },
     include: {
       members: { include: { user: { select: { id: true, name: true, email: true, image: true, title: true, department: true, status: true } } } },

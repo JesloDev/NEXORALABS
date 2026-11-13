@@ -186,7 +186,7 @@ io.on('connection', async (socket) => {
   socket.join(`user:${u.userId}`)
   if (!wasOnline) io.emit('presence', { userId: u.userId, online: true })
 
-  // Rooms: own chats; ADMIN also every channel; SUPER_ADMIN every chat (DM/group monitoring stays read-only).
+  // Rooms: own chats; org admins (ADMIN, SUPER_ADMIN) also every channel; DMs/groups only for members.
   let chatIds: string[] = []
   try { chatIds = await realtimeChatIds(db, actor) } catch (e) { console.error('[join] db error', e) }
   chatIds.forEach((id) => socket.join(`chat:${id}`))
@@ -271,7 +271,7 @@ io.on('connection', async (socket) => {
       if (!msg || msg.deletedAt) return fail(ack, 'Message not found.')
       const access = await getChatAccess(db, actor, msg.chatId)
       if (!access || !access.canRead) return fail(ack, 'Message not found.')
-      // own messages; or moderators (channel/group admins, space managers, org admins in channels, super admin everywhere)
+      // own messages; or moderators (channel/group admins, space managers, org admins in channels only)
       if (msg.senderId !== u.userId && !access.canModerate) return fail(ack, 'forbidden')
       await db.message.update({ where: { id: msg.id }, data: { deletedAt: new Date() } })
       io.to(`chat:${msg.chatId}`).emit('message:deleted', { messageId: msg.id, chatId: msg.chatId, parentId: msg.parentId })

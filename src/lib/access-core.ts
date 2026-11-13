@@ -5,7 +5,7 @@
 //  - Org admins (ADMIN, SUPER_ADMIN) can open EVERY space, channel (private too)
 //    and page. They can read and moderate everywhere; posting in a channel needs
 //    a one-click join (audited), exactly like a Slack workspace admin.
-//  - SUPER_ADMIN additionally keeps the pre-existing read-only monitoring of DMs/groups.
+//  - DMs and group chats are private to their members, for every role (including SUPER_ADMIN).
 //  - Space members see that space's content. Public spaces are discoverable and
 //    joinable; private spaces are invite-only.
 //  - Public channels: any space member can read, join, post. Private channels:
@@ -65,16 +65,15 @@ export async function getChatAccess(db: PrismaClient, actor: Actor, chatId: stri
   const memberRole = cm?.role ?? null
 
   if (chat.type !== 'CHANNEL') {
-    const superAdmin = actor.role === 'SUPER_ADMIN'
     return {
       chat,
       isMember,
       memberRole,
-      canRead: isMember || superAdmin,
+      canRead: isMember,
       canSend: isMember,
-      canModerate: superAdmin || memberRole === 'ADMIN',
+      canModerate: isMember && memberRole === 'ADMIN',
       canJoin: false,
-      viaAdmin: superAdmin && !isMember,
+      viaAdmin: false,
       space: null,
     }
   }
@@ -98,9 +97,8 @@ export async function getChatAccess(db: PrismaClient, actor: Actor, chatId: stri
 
 // Rooms a socket should auto-join on connect.
 export async function realtimeChatIds(db: PrismaClient, actor: Actor): Promise<string[]> {
-  if (actor.role === 'SUPER_ADMIN') return (await db.chat.findMany({ select: { id: true } })).map((c) => c.id)
   const mine = (await db.chatMember.findMany({ where: { userId: actor.id }, select: { chatId: true } })).map((m) => m.chatId)
-  if (actor.role === 'ADMIN') {
+  if (isOrgAdmin(actor.role)) {
     const channels = (await db.chat.findMany({ where: { type: 'CHANNEL' }, select: { id: true } })).map((c) => c.id)
     return Array.from(new Set([...mine, ...channels]))
   }
