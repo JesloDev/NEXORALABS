@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import { useTheme } from 'next-themes'
-import { AlertTriangle, Loader2, Menu, MessageSquarePlus, ShieldCheck, UserCircle, Users } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Loader2, Menu, MessageSquarePlus, ShieldCheck, UserCircle, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -220,6 +220,41 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   }
   const select = (m: Main) => { setMain(m); setNavOpen(false) }
 
+  // ───────── browser / Android back button ─────────
+  // Every view change pushes a history entry so the system back gesture steps through the app
+  // (and closes the drawer / thread) instead of leaving the dashboard.
+  const navKey = `${ctx}|${JSON.stringify(main)}`
+  const navKeyRef = useRef(navKey)
+  const histReady = useRef(false)
+  const popping = useRef(false)
+  useEffect(() => {
+    const prev = navKeyRef.current
+    navKeyRef.current = navKey
+    if (!histReady.current) { histReady.current = true; try { history.replaceState({ ...(history.state || {}), nx: { ctx, main } }, '') } catch {} ; return }
+    if (popping.current) { popping.current = false; return }
+    if (prev === navKey) return
+    try {
+      // the automatic empty → space-home step after loading a space should not add a back stop
+      if (prev.endsWith('{"kind":"empty"}')) history.replaceState({ nx: { ctx, main } }, '')
+      else history.pushState({ nx: { ctx, main } }, '')
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navKey])
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      setNavOpen(false); setThread(null)
+      const st = e.state?.nx as { ctx: Ctx; main: Main } | undefined
+      if (!st) return
+      const key = `${st.ctx}|${JSON.stringify(st.main)}`
+      if (key === navKeyRef.current) return
+      popping.current = true
+      setCtx(st.ctx); setMain(st.main)
+      if (st.ctx !== 'home') loadDetail(st.ctx)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [loadDetail])
+
   const onPick = (h: SearchHit) => {
     if (h.kind === 'page' && h.spaceId) go(h.spaceId, { kind: 'page', id: h.id })
     else if (h.chatId) go(h.spaceId ?? 'home', { kind: 'chat', id: h.chatId })
@@ -294,11 +329,11 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   } else if (main.kind === 'all-spaces') {
     content = <AllSpaces spaces={spaces} isAdmin={isAdmin} onOpen={goSpace} onCreate={() => setNewSpaceOpen(true)} onOpenSidebar={openSidebar} />
   } else if (main.kind === 'console') {
-    content = <div className="h-full overflow-y-auto nexora-scroll"><AdminConsole user={user} /></div>
+    content = <SimplePane title="Admin console" onMenu={openSidebar}><AdminConsole user={user} /></SimplePane>
   } else if (main.kind === 'notifications') {
-    content = <NotificationsPanel />
+    content = <SimplePane title="Notifications" onMenu={openSidebar}><NotificationsPanel /></SimplePane>
   } else if (main.kind === 'profile') {
-    content = <div className="h-full overflow-y-auto nexora-scroll"><ProfileView user={user as any} /></div>
+    content = <SimplePane title="Profile" onMenu={openSidebar}><ProfileView user={user as any} /></SimplePane>
   } else {
     content = ctx === 'home'
       ? <Empty title={`Welcome, ${user.name.split(' ')[0]}`} body="Pick a conversation, start a new one, or open a space from the left rail." action={<Button onClick={() => setNewChatOpen(true)}><MessageSquarePlus className="size-4 mr-2" />New message</Button>} onOpenSidebar={openSidebar} />
@@ -346,6 +381,20 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
           onCreated={async (id) => { setNewChannelOpen(false); await loadDetail(ctx); setMain({ kind: 'chat', id }) }} />
       )}
       <SearchDialog open={searchOpen} onOpenChange={setSearchOpen} onPick={onPick} />
+    </div>
+  )
+}
+
+// Wrapper for full-page views (console, notifications, profile): gives mobile a back button + menu button.
+function SimplePane({ title, onMenu, children }: { title: string; onMenu: () => void; children: React.ReactNode }) {
+  return (
+    <div className="h-full flex flex-col">
+      <header className="md:hidden h-14 shrink-0 border-b border-border flex items-center gap-1 px-2">
+        <Button variant="ghost" size="icon" onClick={() => window.history.back()} aria-label="Go back"><ArrowLeft className="size-5" /></Button>
+        <h1 className="font-semibold text-sm flex-1 truncate">{title}</h1>
+        <Button variant="ghost" size="icon" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
+      </header>
+      <div className="flex-1 min-h-0 overflow-y-auto nexora-scroll">{children}</div>
     </div>
   )
 }

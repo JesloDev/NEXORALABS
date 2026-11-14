@@ -59,7 +59,7 @@ function VerifyState() {
 export default function WaitlistPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b border-border">
+      <header className="hidden md:block border-b border-border">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/"><Logo /></Link>
           <Button asChild variant="ghost" size="sm">

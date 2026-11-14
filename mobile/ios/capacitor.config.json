@@ -1,0 +1,11 @@
+{
+  "appId": "com.nexoralabs.app",
+  "appName": "NEXORALABS",
+  "webDir": "www",
+  "server": {
+    "url": "https://YOUR-DOMAIN.com/dashboard",
+    "cleartext": false,
+    "allowNavigation": ["YOUR-DOMAIN.com", "*.onrender.com"]
+  },
+  "ios": { "contentInset": "automatic", "backgroundColor": "#eae2cb" }
+}

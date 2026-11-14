@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/providers";
+import { PwaRegister } from "@/components/pwa-register";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -25,6 +26,9 @@ export const metadata: Metadata = {
     icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/favicon-32.png", type: "image/png", sizes: "32x32" }, { url: "/favicon-48.png", type: "image/png", sizes: "48x48" }],
     apple: "/apple-touch-icon.png",
   },
+  applicationName: "NEXORALABS",
+  appleWebApp: { capable: true, title: "NEXORALABS", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
   openGraph: {
     title: "NEXORALABS — Turning Ideas Into Sustainable Solutions",
     description: "We turn ideas into sustainable solutions in partnership with the SDGs.",
@@ -40,6 +44,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#eae2cb",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -56,6 +62,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <SonnerToaster richColors position="top-right" />
+          <PwaRegister />
         </Providers>
       </body>
     </html>

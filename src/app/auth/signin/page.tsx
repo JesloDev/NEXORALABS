@@ -96,7 +96,7 @@ function SignInForm() {
         {/* Form panel */}
         <div className="flex items-center justify-center p-6 sm:p-12">
           <div className="w-full max-w-sm">
-            <div className="lg:hidden mb-8">
+            <div className="hidden lg:hidden mb-8">
               <Link href="/"><Logo /></Link>
             </div>
             <Card className="border-border/60 shadow-sm">

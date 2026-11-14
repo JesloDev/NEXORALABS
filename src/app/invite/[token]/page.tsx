@@ -76,7 +76,7 @@ export default function InvitePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header className="border-b border-border">
+      <header className="hidden md:block border-b border-border">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/"><Logo /></Link>
           <Badge variant="secondary" className="gap-1.5"><ShieldCheck className="size-3.5 text-primary" /> Invite-only</Badge>
