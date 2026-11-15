@@ -72,7 +72,7 @@ export default async function LandingPage() {
                 <span className="brand-gradient-text"> sustainable solutions</span>.
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-                NEXORALABS is an innovation studio and impact platform. We work alongside founders and the companies we help build, turning ideas into scalable solutions that deliver lasting value for people and the planet.
+                NEXORALABS is an innovation studio. We work alongside founders and help build their companies, from the first idea onward.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 px-7">
@@ -86,18 +86,12 @@ export default async function LandingPage() {
                 </Button>
               </div>
 
-              <div className="mt-12 grid grid-cols-3 gap-6 max-w-md">
-                {[
-                  { k: companies.length > 0 ? String(companies.length) : '—', l: 'Companies we\'re building' },
-                  { k: '50+', l: 'Ideas in motion' },
-                  { k: '100%', l: 'Impact-driven' },
-                ].map((s) => (
-                  <div key={s.l}>
-                    <div className="text-3xl font-extrabold brand-gradient-text">{s.k}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{s.l}</div>
-                  </div>
-                ))}
-              </div>
+              {companies.length > 0 && (
+                <div className="mt-12">
+                  <div className="text-3xl font-extrabold brand-gradient-text">{companies.length}</div>
+                  <div className="text-xs text-muted-foreground mt-1">Companies we are building</div>
+                </div>
+              )}
             </div>
 
             <div className="lg:col-span-5">
@@ -116,9 +110,6 @@ export default async function LandingPage() {
                           <div className="text-xs text-muted-foreground">Companies we are working with</div>
                         </div>
                       </div>
-                      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-300 border-0">
-                        <span className="size-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" /> Live
-                      </Badge>
                     </div>
                     {companies.length > 0 ? (
                       <ul className="space-y-2">
@@ -150,18 +141,18 @@ export default async function LandingPage() {
           <div className="max-w-2xl">
             <Badge variant="secondary" className="mb-4">Who we are</Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-              We are builders of <span className="brand-gradient-text">sustainable impact</span>.
+              We build companies from <span className="brand-gradient-text">bold ideas</span>.
             </h2>
             <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              NEXORALABS exists at the intersection of innovation, support, and growth. We don't just build software — we engineer solutions that create lasting, measurable change.
+              NEXORALABS exists at the intersection of innovation, support, and growth.
             </p>
           </div>
 
           <div className="mt-12 grid md:grid-cols-3 gap-6">
             {[
-              { icon: Lightbulb, title: 'Innovation', desc: 'We turn ambitious ideas into deployable products — engineering with rigor and imagination, from concept to scale.', color: 'from-green-800 to-lime-500' },
-              { icon: HeartHandshake, title: 'Support', desc: 'We stand with founders and communities, providing mentorship, secure tooling, and hands-on help at every milestone.', color: 'from-emerald-500 to-lime-400' },
-              { icon: TrendingUp, title: 'Growth', desc: 'We design for sustainable scale — solutions that grow impact, revenue, and resilience over time.', color: 'from-lime-500 to-green-700' },
+              { icon: Lightbulb, title: 'Innovation', desc: 'We turn ambitious ideas into working products and companies.', color: 'from-green-800 to-lime-500' },
+              { icon: HeartHandshake, title: 'Support', desc: 'We stand with the founders we work with and help them at each stage.', color: 'from-emerald-500 to-lime-400' },
+              { icon: TrendingUp, title: 'Growth', desc: 'We build with long-term, sustainable growth in mind.', color: 'from-lime-500 to-green-700' },
             ].map((p) => (
               <Card key={p.title} className="group relative overflow-hidden border-border/60 hover:border-primary/40 transition-colors">
                 <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${p.color}`} />
@@ -183,17 +174,14 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <Badge variant="secondary" className="mb-4">What we do</Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">A full-spectrum innovation studio</h2>
-            <p className="mt-4 text-muted-foreground text-lg">From the first spark of an idea to a scaled, sustainable product — we cover the whole journey.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Building alongside founders</h2>
+            <p className="mt-4 text-muted-foreground text-lg">Helping founders turn ideas into companies.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: Lightbulb, title: 'Ideation & Validation', desc: 'We help shape raw concepts into validated opportunities ready for engineering.' },
-              { icon: Rocket, title: 'Product Engineering', desc: 'Secure, scalable software built with a modern stack — hardened backends and delightful experiences.' },
-              { icon: ShieldCheck, title: 'Secure Collaboration', desc: 'A privacy-first internal platform with invite-only onboarding keeps teams moving safely.' },
-              { icon: TrendingUp, title: 'Growth & Scaling', desc: 'Sustainable growth strategies that balance revenue, impact, and resilience.' },
-              { icon: Globe2, title: 'Impact Reporting', desc: 'Transparent dashboards tracking progress and outcomes for every initiative.' },
-              { icon: Users, title: 'Community', desc: 'Connecting founders and mentors to multiply collective impact.' },
+              { icon: Lightbulb, title: 'Company building', desc: 'We help founders turn their ideas into companies.' },
+              { icon: Rocket, title: 'Product engineering', desc: 'We design and build software for the companies we work with.' },
+              { icon: ShieldCheck, title: 'Team workspace', desc: 'An invite-only workspace with chat, spaces and pages for the NEXORALABS team.' },
             ].map((s) => (
               <Card key={s.title} className="border-border/60 hover:border-primary/40 hover:shadow-md transition-all">
                 <CardContent className="p-6">
@@ -275,11 +263,10 @@ export default async function LandingPage() {
               <Badge variant="secondary" className="mb-4">Join the movement</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Be first to build the future, sustainably.</h2>
               <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-                Join the NEXORALABS waitlist to get early access to our innovation programs and product launches. We'll verify your email to make sure we can reach you.
+                Join the NEXORALABS waitlist to get updates on the companies we are building and our product launches. We'll verify your email to make sure we can reach you.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
-                  'Early access to our innovation sprints',
                   'Updates on the companies we are building',
                   'Product launch announcements',
                 ].map((t) => (
@@ -334,7 +321,7 @@ export default async function LandingPage() {
             <p>© {new Date().getFullYear()} NEXORALABS. All rights reserved.</p>
             <p className="flex items-center gap-1.5">
               <Leaf className="size-3.5 text-primary" />
-              Built for sustainable, scalable impact.
+              Innovate. Support. Grow.
             </p>
           </div>
         </div>

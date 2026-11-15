@@ -10,7 +10,7 @@ async function main() {
   const owner = await db.user.findFirst({ where: { role: { in: ['SUPER_ADMIN', 'ADMIN'] } }, orderBy: { createdAt: 'asc' } })
   if (!owner) throw new Error('No admin user found. Run the admin seed first.')
   await db.pipelineItem.createMany({
-    data: COMPANIES.map((title, i) => ({ title, sdgTags: '', progress: 0, sortOrder: i, published: true, createdBy: owner.id })),
+    data: COMPANIES.map((title, i) => ({ title, progress: 0, sortOrder: i, published: true, createdBy: owner.id })),
   })
   console.log(`Seeded ${COMPANIES.length} companies.`)
 }

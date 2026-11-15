@@ -14,7 +14,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try { body = await req.json() } catch { return badRequest('Invalid body') }
   const data: any = {}
   if (typeof body?.title === 'string') data.title = body.title.trim()
-  if (typeof body?.sdgTags === 'string') data.sdgTags = body.sdgTags.trim()
   if (typeof body?.progress === 'number') data.progress = Math.max(0, Math.min(100, body.progress))
   if (typeof body?.iconName === 'string') data.iconName = body.iconName.trim() || 'Leaf'
   if (typeof body?.published === 'boolean') data.published = body.published

@@ -319,7 +319,6 @@ model Notification {
 model PipelineItem {
   id          String   @id @default(cuid())
   title       String
-  sdgTags     String   // e.g. "SDG 2 · 13"
   progress    Int      @default(0) // 0-100
   iconName    String   @default("Leaf") // lucide icon name
   published   Boolean  @default(true)

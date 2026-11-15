@@ -74,7 +74,7 @@ export default function WaitlistPage() {
           </Suspense>
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Join the NEXORALABS waitlist</h1>
-            <p className="mt-3 text-muted-foreground">Be first to access our innovation programs.</p>
+            <p className="mt-3 text-muted-foreground">Get updates on the companies we are building.</p>
           </div>
           <WaitlistForm />
         </div>

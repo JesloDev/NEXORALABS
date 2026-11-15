@@ -22,12 +22,11 @@ export async function POST(req: NextRequest) {
   let body: any
   try { body = await req.json() } catch { return badRequest('Invalid body') }
   const title = (body?.title || '').trim()
-  const sdgTags = (body?.sdgTags || '').trim()
   if (!title) return badRequest('Company name is required.')
   const progress = Math.max(0, Math.min(100, Number(body?.progress) || 0))
   const item = await db.pipelineItem.create({
     data: {
-      title, sdgTags, progress,
+      title, progress,
       iconName: (body?.iconName || 'Leaf').trim(),
       published: body?.published !== false,
       sortOrder: Number(body?.sortOrder) || 0,

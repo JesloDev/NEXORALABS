@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NEXORALABS — Turning Ideas Into Sustainable Solutions",
   description:
-    "NEXORALABS is an innovation studio that turns bold ideas into sustainable, scalable solutions. Innovate, collaborate, and grow with us.",
+    "NEXORALABS is an innovation studio that helps founders turn bold ideas into companies.",
   keywords: ["NEXORALABS", "sustainability", "innovation", "sustainable solutions", "social impact"],
   authors: [{ name: "NEXORALABS" }],
   icons: {

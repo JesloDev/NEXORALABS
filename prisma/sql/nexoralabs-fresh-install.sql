@@ -164,7 +164,6 @@ CREATE TABLE IF NOT EXISTS "nexora_notifications" (
 CREATE TABLE IF NOT EXISTS "nexora_pipeline_items" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
-    "sdgTags" TEXT NOT NULL,
     "progress" INTEGER NOT NULL DEFAULT 0,
     "iconName" TEXT NOT NULL DEFAULT 'Leaf',
     "published" BOOLEAN NOT NULL DEFAULT true,
