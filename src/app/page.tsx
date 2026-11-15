@@ -72,7 +72,7 @@ export default async function LandingPage() {
                 <span className="brand-gradient-text"> sustainable solutions</span>.
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-                NEXORALABS is an innovation studio. We work alongside founders and help build their companies, from the first idea onward.
+                NEXORALABS is an execution agency. We help turn ideas into scalable and sustainable solutions, and we offer marketing and technical services to individuals and companies.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 px-7">
@@ -141,10 +141,10 @@ export default async function LandingPage() {
           <div className="max-w-2xl">
             <Badge variant="secondary" className="mb-4">Who we are</Badge>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-              We build companies from <span className="brand-gradient-text">bold ideas</span>.
+              We turn ideas into <span className="brand-gradient-text">solutions that last</span>.
             </h2>
             <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              NEXORALABS exists at the intersection of innovation, support, and growth.
+              NEXORALABS is an execution agency. We help turn ideas into scalable and sustainable solutions, working with the companies we help build and with individuals and companies who need marketing and technical services.
             </p>
           </div>
 
@@ -174,14 +174,14 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-14">
             <Badge variant="secondary" className="mb-4">What we do</Badge>
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Building alongside founders</h2>
-            <p className="mt-4 text-muted-foreground text-lg">Helping founders turn ideas into companies.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Execution, marketing and technical services</h2>
+            <p className="mt-4 text-muted-foreground text-lg">For individuals and companies.</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: Lightbulb, title: 'Company building', desc: 'We help founders turn their ideas into companies.' },
-              { icon: Rocket, title: 'Product engineering', desc: 'We design and build software for the companies we work with.' },
-              { icon: ShieldCheck, title: 'Team workspace', desc: 'An invite-only workspace with chat, spaces and pages for the NEXORALABS team.' },
+              { icon: Lightbulb, title: 'Idea execution', desc: 'We help turn ideas into scalable and sustainable solutions.' },
+              { icon: TrendingUp, title: 'Marketing services', desc: 'We offer all kinds of marketing services to individuals and companies.' },
+              { icon: Rocket, title: 'Technical services', desc: 'We offer all kinds of technical services to individuals and companies.' },
             ].map((s) => (
               <Card key={s.title} className="border-border/60 hover:border-primary/40 hover:shadow-md transition-all">
                 <CardContent className="p-6">
