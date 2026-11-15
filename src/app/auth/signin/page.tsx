@@ -74,7 +74,7 @@ function SignInForm() {
               The internal circle for <span className="brand-gradient-text">NEXORALABS</span> teams.
             </h2>
             <p className="mt-4 text-muted-foreground leading-relaxed max-w-md">
-              Secure, invite-only collaboration hardened for the teams turning ideas into sustainable, SDG-aligned solutions.
+              Secure, invite-only collaboration hardened for the teams turning ideas into sustainable solutions.
             </p>
             <div className="mt-8 space-y-3">
               {[

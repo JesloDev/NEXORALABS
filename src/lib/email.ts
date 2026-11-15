@@ -63,7 +63,7 @@ export function emailShell(opts: { preheader?: string; title: string; bodyHtml: 
         </td></tr>
         <tr><td style="padding:24px 40px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;line-height:1.6;">
           You received this email because of activity on your NEXORALABS account. If this wasn't you, please contact your administrator immediately.<br/>
-          © ${new Date().getFullYear()} NEXORALABS. In partnership with the UN Sustainable Development Goals.
+          © ${new Date().getFullYear()} NEXORALABS.
         </td></tr>
       </table>
     </td></tr>

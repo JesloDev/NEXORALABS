@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Lightbulb, HeartHandshake, TrendingUp, Leaf, ShieldCheck, Globe2,
-  ArrowRight, Sparkles, Users, Rocket, MessageSquare, CheckCircle2, Quote, ArrowUpRight,
+  ArrowRight, Sparkles, Users, Rocket, MessageSquare, CheckCircle2, ArrowUpRight,
 } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -65,14 +65,14 @@ export default async function LandingPage() {
             <div className="lg:col-span-7">
               <Badge className="mb-6 rounded-full border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
                 <Sparkles className="size-3.5 mr-1.5" />
-                In partnership with the UN Sustainable Development Goals
+                Innovate · Create · Grow
               </Badge>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.05]">
                 Turning bold ideas into
                 <span className="brand-gradient-text"> sustainable solutions</span>.
               </h1>
               <p className="mt-6 text-lg text-muted-foreground max-w-xl leading-relaxed">
-                NEXORALABS is an innovation studio and impact platform. We partner with founders, communities, and institutions to transform ideas into scalable, SDG-aligned solutions that deliver lasting value for people and the planet.
+                NEXORALABS is an innovation studio and impact platform. We work alongside founders and the companies we help build, turning ideas into scalable solutions that deliver lasting value for people and the planet.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button asChild size="lg" className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-12 px-7">
@@ -88,7 +88,7 @@ export default async function LandingPage() {
 
               <div className="mt-12 grid grid-cols-3 gap-6 max-w-md">
                 {[
-                  { k: '17', l: 'SDGs aligned' },
+                  { k: companies.length > 0 ? String(companies.length) : '—', l: 'Companies we\'re building' },
                   { k: '50+', l: 'Ideas in motion' },
                   { k: '100%', l: 'Impact-driven' },
                 ].map((s) => (
@@ -130,31 +130,16 @@ export default async function LandingPage() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-sm text-muted-foreground rounded-xl border border-dashed border-border/60 px-3 py-6 text-center">Partner companies will appear here.</p>
+                      <p className="text-sm text-muted-foreground rounded-xl border border-dashed border-border/60 px-3 py-6 text-center">Companies will appear here.</p>
                     )}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                       <ShieldCheck className="size-3.5 text-primary" />
-                      Every solution mapped to measurable SDG targets.
+                      The companies we are helping to build.
                     </div>
                   </CardContent>
                 </Card>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ───────── SDG STRIP ───────── */}
-      <section className="border-y border-border/60 bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">Aligned with the Global Goals</span>
-            {['No Poverty', 'Zero Hunger', 'Good Health', 'Quality Education', 'Clean Energy', 'Decent Work', 'Climate Action', 'Partnerships'].map((g) => (
-              <span key={g} className="flex items-center gap-1.5">
-                <Leaf className="size-3.5 text-primary" />
-                {g}
-              </span>
-            ))}
           </div>
         </div>
       </section>
@@ -168,14 +153,14 @@ export default async function LandingPage() {
               We are builders of <span className="brand-gradient-text">sustainable impact</span>.
             </h2>
             <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-              NEXORALABS exists at the intersection of innovation, support, and growth. We don't just build software — we engineer solutions that create lasting, measurable change aligned with the United Nations Sustainable Development Goals.
+              NEXORALABS exists at the intersection of innovation, support, and growth. We don't just build software — we engineer solutions that create lasting, measurable change.
             </p>
           </div>
 
           <div className="mt-12 grid md:grid-cols-3 gap-6">
             {[
               { icon: Lightbulb, title: 'Innovation', desc: 'We turn ambitious ideas into deployable products — engineering with rigor and imagination, from concept to scale.', color: 'from-green-800 to-lime-500' },
-              { icon: HeartHandshake, title: 'Support', desc: 'We stand with founders and communities, providing mentorship, secure tooling, and partnership at every milestone.', color: 'from-emerald-500 to-lime-400' },
+              { icon: HeartHandshake, title: 'Support', desc: 'We stand with founders and communities, providing mentorship, secure tooling, and hands-on help at every milestone.', color: 'from-emerald-500 to-lime-400' },
               { icon: TrendingUp, title: 'Growth', desc: 'We design for sustainable scale — solutions that grow impact, revenue, and resilience over time.', color: 'from-lime-500 to-green-700' },
             ].map((p) => (
               <Card key={p.title} className="group relative overflow-hidden border-border/60 hover:border-primary/40 transition-colors">
@@ -193,54 +178,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ───────── SDG PARTNERSHIP ───────── */}
-      <section id="sdg" className="py-20 sm:py-28 bg-muted/30 border-y border-border/60">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge variant="secondary" className="mb-4">Our commitment</Badge>
-              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                A partnership with the <span className="brand-gradient-text">Sustainable Development Goals</span>.
-              </h2>
-              <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-                Every solution we ship is mapped to specific SDG targets. From clean energy and climate action to quality education and decent work, we measure success not only in revenue, but in real-world impact.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  'Impact-first engineering — every product links to measurable SDG outcomes',
-                  'Transparent reporting on progress toward global goals',
-                  'Partnerships with mission-aligned founders, NGOs, and institutions',
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-3">
-                    <CheckCircle2 className="size-5 text-primary mt-0.5 shrink-0" />
-                    <span className="text-sm text-foreground/90">{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {[
-                { n: '1', l: 'No Poverty', c: 'bg-[#E5243B]/10 text-[#E5243B]' },
-                { n: '2', l: 'Zero Hunger', c: 'bg-[#DDA63A]/10 text-[#DDA63A]' },
-                { n: '3', l: 'Good Health', c: 'bg-[#4C9F38]/10 text-[#4C9F38]' },
-                { n: '4', l: 'Education', c: 'bg-[#C5192D]/10 text-[#C5192D]' },
-                { n: '7', l: 'Clean Energy', c: 'bg-[#FCC30B]/10 text-[#FCC30B]' },
-                { n: '8', l: 'Decent Work', c: 'bg-[#A21942]/10 text-[#A21942]' },
-                { n: '13', l: 'Climate Action', c: 'bg-[#3F7E44]/10 text-[#3F7E44]' },
-                { n: '17', l: 'Partnerships', c: 'bg-primary/10 text-primary' },
-              ].map((g) => (
-                <div key={g.n} className="rounded-2xl border border-border/60 bg-card p-4 text-center hover:shadow-sm transition-shadow">
-                  <div className={`mx-auto size-12 rounded-xl ${g.c} flex items-center justify-center font-bold mb-2`}>
-                    {g.n}
-                  </div>
-                  <div className="text-xs font-medium text-foreground/80">{g.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ───────── WHAT WE DO ───────── */}
       <section id="work" className="py-20 sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -251,12 +188,12 @@ export default async function LandingPage() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { icon: Lightbulb, title: 'Ideation & Validation', desc: 'We help shape raw concepts into validated, SDG-aligned opportunities ready for engineering.' },
+              { icon: Lightbulb, title: 'Ideation & Validation', desc: 'We help shape raw concepts into validated opportunities ready for engineering.' },
               { icon: Rocket, title: 'Product Engineering', desc: 'Secure, scalable software built with a modern stack — hardened backends and delightful experiences.' },
               { icon: ShieldCheck, title: 'Secure Collaboration', desc: 'A privacy-first internal platform with invite-only onboarding keeps teams moving safely.' },
               { icon: TrendingUp, title: 'Growth & Scaling', desc: 'Sustainable growth strategies that balance revenue, impact, and resilience.' },
-              { icon: Globe2, title: 'Impact Reporting', desc: 'Transparent dashboards linking every initiative to measurable SDG outcomes.' },
-              { icon: Users, title: 'Community & Partnership', desc: 'Connecting founders, mentors, and institutions to multiply collective impact.' },
+              { icon: Globe2, title: 'Impact Reporting', desc: 'Transparent dashboards tracking progress and outcomes for every initiative.' },
+              { icon: Users, title: 'Community', desc: 'Connecting founders and mentors to multiply collective impact.' },
             ].map((s) => (
               <Card key={s.title} className="border-border/60 hover:border-primary/40 hover:shadow-md transition-all">
                 <CardContent className="p-6">
@@ -279,7 +216,7 @@ export default async function LandingPage() {
             <div className="max-w-2xl">
               <Badge variant="secondary" className="mb-4">News & Announcements</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Latest from NEXORALABS</h2>
-              <p className="mt-3 text-muted-foreground">Updates, partnerships, and milestones — published by our leadership team.</p>
+              <p className="mt-3 text-muted-foreground">Updates and milestones — published by our leadership team.</p>
             </div>
           </div>
 
@@ -330,23 +267,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ───────── TESTIMONIAL ───────── */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <Quote className="size-10 mx-auto text-primary/40 mb-6" />
-          <p className="text-2xl sm:text-3xl font-semibold tracking-tight leading-snug">
-            “NEXORALABS didn't just build our product — they helped us understand the impact we could create. They turned our idea into a movement aligned with the goals that matter.”
-          </p>
-          <div className="mt-8 flex items-center justify-center gap-3">
-            <div className="size-11 rounded-full bg-gradient-to-br from-primary to-[var(--brand-accent)]" />
-            <div className="text-left">
-              <div className="font-semibold">Partner Founder</div>
-              <div className="text-sm text-muted-foreground">Climate-smart agriculture startup</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ───────── WAITLIST CTA ───────── */}
       <section id="waitlist" className="py-20 sm:py-28 bg-muted/30 border-t border-border/60">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -355,13 +275,13 @@ export default async function LandingPage() {
               <Badge variant="secondary" className="mb-4">Join the movement</Badge>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Be first to build the future, sustainably.</h2>
               <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-                Join the NEXORALABS waitlist to get early access to our innovation programs, partnership opportunities, and product launches. We'll verify your email to make sure we can reach you.
+                Join the NEXORALABS waitlist to get early access to our innovation programs and product launches. We'll verify your email to make sure we can reach you.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
                   'Early access to our innovation sprints',
-                  'Partnership & collaboration opportunities',
-                  'Insights on SDG-aligned ventures',
+                  'Updates on the companies we are building',
+                  'Product launch announcements',
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-3">
                     <CheckCircle2 className="size-5 text-primary mt-0.5 shrink-0" />
@@ -391,14 +311,13 @@ export default async function LandingPage() {
             <div className="md:col-span-2">
               <Logo size={36} />
               <p className="mt-4 text-sm text-muted-foreground max-w-sm leading-relaxed">
-                NEXORALABS turns ideas into sustainable solutions — in partnership with the UN Sustainable Development Goals. Innovate. Support. Grow.
+                NEXORALABS turns ideas into sustainable solutions. Innovate. Support. Grow.
               </p>
             </div>
             <div>
               <h4 className="font-semibold text-sm mb-3">Platform</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="#about" className="hover:text-foreground">About</Link></li>
-                <li><Link href="#sdg" className="hover:text-foreground">SDG Partnership</Link></li>
                 <li><Link href="#work" className="hover:text-foreground">What We Do</Link></li>
                 <li><Link href="#news" className="hover:text-foreground">News</Link></li>
               </ul>

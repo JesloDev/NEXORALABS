@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     preheader: 'Your email is confirmed.',
     bodyHtml: `<p>Hi ${name},</p>
       <p>Your email is confirmed and you're officially on the NEXORALABS waitlist.</p>
-      <p>We're thrilled to have you on this journey. Our team reviews every entry and will reach out as we onboard new partners and customers.</p>
+      <p>We're thrilled to have you on this journey. Our team reviews every entry and will reach out as we open up access.</p>
       <p>Thank you for believing in sustainable growth.</p>`,
   })
   await sendEmail({

@@ -19,8 +19,8 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "NEXORALABS — Turning Ideas Into Sustainable Solutions",
   description:
-    "NEXORALABS partners with the UN Sustainable Development Goals to transform bold ideas into sustainable, scalable solutions. Innovate, collaborate, and grow with us.",
-  keywords: ["NEXORALABS", "SDG", "sustainability", "innovation", "sustainable solutions", "social impact"],
+    "NEXORALABS is an innovation studio that turns bold ideas into sustainable, scalable solutions. Innovate, collaborate, and grow with us.",
+  keywords: ["NEXORALABS", "sustainability", "innovation", "sustainable solutions", "social impact"],
   authors: [{ name: "NEXORALABS" }],
   icons: {
     icon: [{ url: "/favicon.ico", sizes: "any" }, { url: "/favicon-32.png", type: "image/png", sizes: "32x32" }, { url: "/favicon-48.png", type: "image/png", sizes: "48x48" }],
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false },
   openGraph: {
     title: "NEXORALABS — Turning Ideas Into Sustainable Solutions",
-    description: "We turn ideas into sustainable solutions in partnership with the SDGs.",
+    description: "We turn ideas into sustainable solutions.",
     siteName: "NEXORALABS",
     type: "website",
   },

@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils'
 
 const links = [
   { href: '#about', label: 'About' },
-  { href: '#sdg', label: 'SDG Partnership' },
   { href: '#work', label: 'What We Do' },
   { href: '#news', label: 'News' },
   { href: '#waitlist', label: 'Waitlist' },
