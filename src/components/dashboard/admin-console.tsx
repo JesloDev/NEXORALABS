@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import {
@@ -20,18 +19,26 @@ import {
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import type { DashboardUser } from './dashboard-app'
+import { useDialogs } from './use-dialogs'
 
 function initials(name: string) {
   return name?.split(' ').map((n) => n[0]).slice(0, 2).join('').toUpperCase() || '?'
 }
 
 export function AdminConsole({ user }: { user: DashboardUser }) {
-  const isSuper = user.role === 'SUPER_ADMIN'
+  const [tab, setTab] = useState('overview')
+  const tabsRef = useRef<HTMLDivElement>(null)
+  // keep the active tab visible in the horizontally scrolling tab bar
+  useEffect(() => {
+    tabsRef.current?.querySelector('[data-state="active"]')?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' })
+  }, [tab])
+  const trigger = 'gap-1.5 h-9 px-3.5 flex-none text-sm'
   return (
     <div className="h-full flex flex-col">
-      <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+      <Tabs value={tab} onValueChange={setTab} className="flex-1 flex flex-col min-h-0 gap-0">
         <div className="shrink-0 border-b border-border bg-background">
-          <div className="px-5 sm:px-6 pt-4 flex items-center gap-3">
+          {/* the mobile page header already shows the title, so this block is desktop only */}
+          <div className="hidden md:flex px-6 pt-4 items-center gap-3">
             <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <ShieldCheck className="size-5 text-primary" />
             </div>
@@ -40,22 +47,22 @@ export function AdminConsole({ user }: { user: DashboardUser }) {
               <p className="text-xs text-muted-foreground">Manage your team, invites, content and platform activity.</p>
             </div>
           </div>
-          <div className="px-5 sm:px-6 py-3">
-            <TabsList className="w-full justify-start overflow-x-auto flex-wrap h-auto">
-              <TabsTrigger value="overview" className="gap-1.5"><Activity className="size-3.5" /> Overview</TabsTrigger>
-              <TabsTrigger value="users" className="gap-1.5"><UsersIcon className="size-3.5" /> Users</TabsTrigger>
-              <TabsTrigger value="approvals" className="gap-1.5"><UserCheck className="size-3.5" /> Approvals</TabsTrigger>
-              <TabsTrigger value="invites" className="gap-1.5"><Link2 className="size-3.5" /> Invite Links</TabsTrigger>
-              <TabsTrigger value="companies" className="gap-1.5"><Workflow className="size-3.5" /> Companies</TabsTrigger>
-              <TabsTrigger value="announcements" className="gap-1.5"><Megaphone className="size-3.5" /> News</TabsTrigger>
-              <TabsTrigger value="waitlist" className="gap-1.5"><ClipboardList className="size-3.5" /> Waitlist</TabsTrigger>
-              <TabsTrigger value="activity" className="gap-1.5"><Activity className="size-3.5" /> Activity</TabsTrigger>
+          <div ref={tabsRef} className="px-3 md:px-6 py-2 md:py-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="w-max h-11 justify-start">
+              <TabsTrigger value="overview" className={trigger}><Activity className="size-4" /> Overview</TabsTrigger>
+              <TabsTrigger value="users" className={trigger}><UsersIcon className="size-4" /> Users</TabsTrigger>
+              <TabsTrigger value="approvals" className={trigger}><UserCheck className="size-4" /> Approvals</TabsTrigger>
+              <TabsTrigger value="invites" className={trigger}><Link2 className="size-4" /> Invites</TabsTrigger>
+              <TabsTrigger value="companies" className={trigger}><Workflow className="size-4" /> Companies</TabsTrigger>
+              <TabsTrigger value="announcements" className={trigger}><Megaphone className="size-4" /> News</TabsTrigger>
+              <TabsTrigger value="waitlist" className={trigger}><ClipboardList className="size-4" /> Waitlist</TabsTrigger>
+              <TabsTrigger value="activity" className={trigger}><Activity className="size-4" /> Activity</TabsTrigger>
             </TabsList>
           </div>
         </div>
 
-        <ScrollArea className="flex-1 nexora-scroll">
-          <div className="p-5 sm:p-6 pb-16 max-w-6xl mx-auto w-full">
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain nexora-scroll">
+          <div className="p-4 sm:p-6 pb-24 max-w-6xl mx-auto w-full">
             <TabsContent value="overview" className="mt-0"><OverviewTab /></TabsContent>
             <TabsContent value="users" className="mt-0"><UsersTab currentUserId={user.id} currentRole={user.role} /></TabsContent>
             <TabsContent value="approvals" className="mt-0"><ApprovalsTab /></TabsContent>
@@ -65,7 +72,7 @@ export function AdminConsole({ user }: { user: DashboardUser }) {
             <TabsContent value="waitlist" className="mt-0"><WaitlistTab /></TabsContent>
             <TabsContent value="activity" className="mt-0"><ActivityTab /></TabsContent>
           </div>
-        </ScrollArea>
+        </div>
       </Tabs>
     </div>
   )
@@ -91,7 +98,7 @@ function OverviewTab() {
     { label: 'Waitlist', value: stats.waitlist, icon: ClipboardList, color: 'text-lime-600' },
   ]
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
       {cards.map((c) => (
         <Card key={c.label} className="border-border/60">
           <CardContent className="p-4">
@@ -107,6 +114,7 @@ function OverviewTab() {
 
 // ── Users ──
 function UsersTab({ currentUserId, currentRole }: { currentUserId: string; currentRole: string }) {
+  const { confirm, dialogs } = useDialogs()
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -135,7 +143,7 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
     fetchUsers()
   }
   const deleteUser = async (userId: string) => {
-    if (!confirm('Permanently delete this user? This cannot be undone.')) return
+    if (!(await confirm({ title: 'Delete this user?', message: 'This permanently deletes the account and cannot be undone.', destructive: true }))) return
     const res = await fetch(`/api/admin/users/${userId}`, { method: 'DELETE' })
     const data = await res.json()
     if (!res.ok) return toast.error(data.error)
@@ -145,10 +153,11 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
 
   return (
     <div className="space-y-4">
+      {dialogs}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-semibold">Team members ({users.length})</h3>
         <div className="relative w-full sm:w-72">
-          <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Search users..." className="pl-3" />
+          <Input value={q} onChange={e => setQ(e.target.value)} placeholder="Search users..." className="pl-3 h-11 sm:h-9" type="search" />
         </div>
       </div>
       <Card className="border-border/60">
@@ -159,26 +168,28 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
                 const isSelf = u.id === currentUserId
                 const isSuper = u.role === 'SUPER_ADMIN'
                 return (
-                  <div key={u.id} className="flex items-center gap-3 p-3 sm:p-4">
-                    <Avatar className="size-9"><AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(u.name)}</AvatarFallback></Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm truncate">{u.name}{isSelf && ' (you)'}</span>
-                        {isSuper && <Crown className="size-3 text-amber-500" />}
+                  <div key={u.id} className="p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <Avatar className="size-10 shrink-0"><AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(u.name)}</AvatarFallback></Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm truncate">{u.name}{isSelf && ' (you)'}</span>
+                          {isSuper && <Crown className="size-3 text-amber-500 shrink-0" />}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{u.email}{u.title ? ` · ${u.title}` : ''}</div>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate">{u.email}{u.title ? ` · ${u.title}` : ''}</div>
+                      <Badge variant={u.status === 'ACTIVE' ? 'default' : 'secondary'} className={cn('text-[10px] shrink-0', u.status === 'SUSPENDED' && 'bg-amber-500/10 text-amber-600 border-0', u.status === 'PENDING' && 'bg-sky-500/10 text-sky-600 border-0')}>{u.status}</Badge>
                     </div>
-                    <Badge variant={u.status === 'ACTIVE' ? 'default' : 'secondary'} className={cn('text-[10px]', u.status === 'SUSPENDED' && 'bg-amber-500/10 text-amber-600 border-0', u.status === 'PENDING' && 'bg-sky-500/10 text-sky-600 border-0')}>{u.status}</Badge>
                     {!isSelf && !isSuper && currentRole !== 'EMPLOYEE' && (
-                      <div className="flex items-center gap-1">
-                        <select value={u.role} onChange={e => updateRole(u.id, e.target.value)} disabled={currentRole === 'ADMIN'} className="text-xs rounded-md border border-input bg-background px-2 py-1 h-8">
+                      <div className="flex items-center gap-2 sm:gap-1">
+                        <select aria-label={`Role for ${u.name}`} value={u.role} onChange={e => updateRole(u.id, e.target.value)} disabled={currentRole === 'ADMIN'} className="flex-1 sm:flex-none text-sm sm:text-xs rounded-md border border-input bg-background px-2 h-10 sm:h-8">
                           <option value="EMPLOYEE">Team</option>
                           <option value="ADMIN">Admin</option>
                         </select>
-                        <Button size="icon" variant="ghost" className="size-8" onClick={() => toggleSuspend(u.id, u.status !== 'SUSPENDED')} title={u.status === 'SUSPENDED' ? 'Reactivate' : 'Suspend'}>
+                        <Button size="icon" variant="outline" className="size-10 sm:size-8 sm:border-0 sm:bg-transparent" onClick={() => toggleSuspend(u.id, u.status !== 'SUSPENDED')} title={u.status === 'SUSPENDED' ? 'Reactivate' : 'Suspend'} aria-label={u.status === 'SUSPENDED' ? 'Reactivate user' : 'Suspend user'}>
                           {u.status === 'SUSPENDED' ? <CheckCircle2 className="size-4 text-emerald-500" /> : <Ban className="size-4 text-amber-500" />}
                         </Button>
-                        <Button size="icon" variant="ghost" className="size-8 hover:text-destructive" onClick={() => deleteUser(u.id)} title="Delete">
+                        <Button size="icon" variant="outline" className="size-10 sm:size-8 sm:border-0 sm:bg-transparent hover:text-destructive" onClick={() => deleteUser(u.id)} title="Delete" aria-label="Delete user">
                           <Trash2 className="size-4" />
                         </Button>
                       </div>
@@ -196,6 +207,7 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
 
 // ── Approvals ──
 function ApprovalsTab() {
+  const { confirm, prompt, dialogs } = useDialogs()
   const [data, setData] = useState<{ pending: any[]; incomplete: any[] }>({ pending: [], incomplete: [] })
   const [loading, setLoading] = useState(true)
   const fetch_ = async () => {
@@ -212,20 +224,23 @@ function ApprovalsTab() {
     fetch_()
   }
   const reject = async (id: string) => {
-    const reason = prompt('Reason for rejection (optional):') || ''
+    const r = await prompt({ title: 'Reject this registration?', message: 'Optionally say why. The email is freed so they can register again.', placeholder: 'Reason (optional)', confirmLabel: 'Reject' })
+    if (r === null) return
+    const reason = r.trim()
     const res = await fetch(`/api/admin/approvals/${id}/reject`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason }) })
     if (!res.ok) { const d = await res.json(); return toast.error(d.error) }
     toast.success('Registration rejected. Email freed for re-registration.')
     fetch_()
   }
   const clearIncomplete = async (id: string) => {
-    if (!confirm('Remove this incomplete registration?')) return
+    if (!(await confirm({ title: 'Remove this registration?', message: 'It was never verified.', confirmLabel: 'Remove', destructive: true }))) return
     const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' })
     if (res.ok) { toast.success('Removed.'); fetch_() }
   }
   if (loading) return <CenterSpinner />
   return (
     <div className="space-y-6">
+      {dialogs}
       <div>
         <h3 className="font-semibold mb-3">Pending approval ({data.pending.length})</h3>
         {data.pending.length === 0 ? (
@@ -234,15 +249,18 @@ function ApprovalsTab() {
           <div className="space-y-2">
             {data.pending.map((u) => (
               <Card key={u.id} className="border-border/60">
-                <CardContent className="p-4 flex items-center gap-3 flex-wrap">
-                  <Avatar className="size-10"><AvatarFallback className="bg-sky-500/10 text-sky-600">{initials(u.name)}</AvatarFallback></Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{u.name}</div>
-                    <div className="text-xs text-muted-foreground">{u.email} · {u.title || 'No title'} · verified {new Date(u.emailVerified).toLocaleDateString()}</div>
+                <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Avatar className="size-10 shrink-0"><AvatarFallback className="bg-sky-500/10 text-sky-600">{initials(u.name)}</AvatarFallback></Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{u.name}</div>
+                      <div className="text-xs text-muted-foreground break-all">{u.email}</div>
+                      <div className="text-xs text-muted-foreground">{u.title || 'No title'} · verified {new Date(u.emailVerified).toLocaleDateString()}</div>
+                    </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={() => approve(u.id)} className="bg-primary text-primary-foreground"><CheckCircle2 className="size-4 mr-1" /> Approve</Button>
-                    <Button size="sm" variant="outline" onClick={() => reject(u.id)} className="text-destructive hover:text-destructive"><XCircle className="size-4 mr-1" /> Reject</Button>
+                    <Button onClick={() => approve(u.id)} className="flex-1 sm:flex-none h-11 sm:h-8 bg-primary text-primary-foreground"><CheckCircle2 className="size-4 mr-1" /> Approve</Button>
+                    <Button variant="outline" onClick={() => reject(u.id)} className="flex-1 sm:flex-none h-11 sm:h-8 text-destructive hover:text-destructive"><XCircle className="size-4 mr-1" /> Reject</Button>
                   </div>
                 </CardContent>
               </Card>
@@ -260,9 +278,9 @@ function ApprovalsTab() {
                   <div key={u.id} className="flex items-center gap-3 p-3">
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium">{u.name}</div>
-                      <div className="text-xs text-muted-foreground">{u.email} — email not verified</div>
+                      <div className="text-xs text-muted-foreground break-all">{u.email} — email not verified</div>
                     </div>
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => clearIncomplete(u.id)}><Trash2 className="size-4" /></Button>
+                    <Button size="icon" variant="ghost" className="size-10 sm:size-8 shrink-0 text-destructive hover:text-destructive" aria-label="Remove registration" onClick={() => clearIncomplete(u.id)}><Trash2 className="size-4" /></Button>
                   </div>
                 ))}
               </div>
@@ -276,6 +294,7 @@ function ApprovalsTab() {
 
 // ── Invites ──
 function InvitesTab() {
+  const { confirm, dialogs } = useDialogs()
   const [invites, setInvites] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [maxUses, setMaxUses] = useState(1)
@@ -293,48 +312,50 @@ function InvitesTab() {
   useEffect(() => { fetch_() }, [])
   const create = async () => {
     setCreating(true)
-    const res = await fetch('/api/admin/invites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ maxUses: Number(maxUses), expiresInDays: Number(days), label }) })
-    const d = await res.json()
-    if (!res.ok) return toast.error(d.error)
-    toast.success('Invite link created.')
-    setLabel('')
-    fetch_()
-    setCreating(false)
+    try {
+      const res = await fetch('/api/admin/invites', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ maxUses: Number(maxUses), expiresInDays: Number(days), label }) })
+      const d = await res.json()
+      if (!res.ok) return toast.error(d.error)
+      toast.success('Invite link created.')
+      setLabel('')
+      fetch_()
+    } catch { toast.error('Network error.') }
+    finally { setCreating(false) }
   }
   const revoke = async (id: string) => {
-    if (!confirm('Revoke this invite link?')) return
+    if (!(await confirm({ title: 'Revoke this invite link?', message: 'Nobody will be able to join with it any more.', confirmLabel: 'Revoke', destructive: true }))) return
     await fetch(`/api/admin/invites/${id}`, { method: 'DELETE' })
     toast.success('Invite revoked.')
     fetch_()
   }
   const copy = (token: string) => {
     const url = `${window.location.origin}/invite/${token}`
-    navigator.clipboard.writeText(url)
-    setCopied(token)
-    toast.success('Invite link copied!')
-    setTimeout(() => setCopied(null), 2000)
+    const done = () => { setCopied(token); toast.success('Invite link copied!'); setTimeout(() => setCopied(null), 2000) }
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, () => toast.error('Could not copy. Press and hold the link to copy it.'))
+    else toast.error('Copying is not available here.')
   }
 
   return (
     <div className="space-y-6">
+      {dialogs}
       <Card className="border-border/60">
         <CardHeader><CardTitle className="text-base">Generate a new invite link</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label>Max uses</Label>
-              <Input type="number" min={1} max={1000} value={maxUses} onChange={e => setMaxUses(Number(e.target.value))} />
+              <Input type="number" inputMode="numeric" className="h-11 sm:h-9" min={1} max={1000} value={maxUses} onChange={e => setMaxUses(Number(e.target.value))} />
             </div>
             <div className="space-y-1.5">
               <Label>Expires in (days)</Label>
-              <Input type="number" min={1} max={365} value={days} onChange={e => setDays(Number(e.target.value))} />
+              <Input type="number" inputMode="numeric" className="h-11 sm:h-9" min={1} max={365} value={days} onChange={e => setDays(Number(e.target.value))} />
             </div>
             <div className="space-y-1.5">
               <Label>Label (optional)</Label>
-              <Input value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Engineering hire" />
+              <Input className="h-11 sm:h-9" value={label} onChange={e => setLabel(e.target.value)} placeholder="e.g. Engineering hire" />
             </div>
           </div>
-          <Button onClick={create} disabled={creating} className="bg-primary text-primary-foreground"><Plus className="size-4 mr-1.5" /> {creating ? 'Creating...' : 'Create invite link'}</Button>
+          <Button onClick={create} disabled={creating} className="w-full sm:w-auto h-11 sm:h-9 bg-primary text-primary-foreground"><Plus className="size-4 mr-1.5" /> {creating ? 'Creating...' : 'Create invite link'}</Button>
         </CardContent>
       </Card>
 
@@ -344,7 +365,7 @@ function InvitesTab() {
           <div className="space-y-2">
             {invites.map((i) => (
               <Card key={i.id} className={cn('border-border/60', !i.valid && 'opacity-60')}>
-                <CardContent className="p-4 flex items-center gap-3 flex-wrap">
+                <CardContent className="p-4 flex items-center gap-3">
                   <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0"><Link2 className="size-4 text-primary" /></div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -357,12 +378,12 @@ function InvitesTab() {
                       {i.currentUses}/{i.maxUses} used · expires {new Date(i.expiresAt).toLocaleDateString()} · by {i.createdBy?.name}
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => copy(i.token)}>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button variant="outline" className="size-10 sm:size-8 p-0" aria-label="Copy invite link" onClick={() => copy(i.token)}>
                       {copied === i.token ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
                     </Button>
                     {i.valid && (
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => revoke(i.id)} title="Revoke"><Ban className="size-4" /></Button>
+                      <Button variant="ghost" className="size-10 sm:size-8 p-0 text-destructive hover:text-destructive" onClick={() => revoke(i.id)} title="Revoke" aria-label="Revoke invite link"><Ban className="size-4" /></Button>
                     )}
                   </div>
                 </CardContent>
@@ -378,6 +399,7 @@ function InvitesTab() {
 // ── Announcements ──
 // Companies shown on the landing page hero card ("Innovation Pipeline"), stored as PipelineItem rows.
 function CompaniesTab() {
+  const { confirm, prompt, dialogs } = useDialogs()
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [name, setName] = useState('')
@@ -426,29 +448,30 @@ function CompaniesTab() {
 
   return (
     <div className="space-y-4">
+      {dialogs}
       <Card>
         <CardHeader className="pb-3"><CardTitle className="text-base">Companies we work with</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">These appear in the Innovation Pipeline card on the landing page. Only published companies are shown.</p>
           <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); add() }}>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Company name" aria-label="Company name" maxLength={80} />
-            <Button type="submit" disabled={busy === 'add' || !name.trim()}>{busy === 'add' ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4 mr-1.5" />}Add</Button>
+            <Input className="h-11 sm:h-9" value={name} onChange={(e) => setName(e.target.value)} placeholder="Company name" aria-label="Company name" maxLength={80} />
+            <Button type="submit" className="h-11 sm:h-9" disabled={busy === 'add' || !name.trim()}>{busy === 'add' ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4 mr-1.5" />}Add</Button>
           </form>
           {loading ? <Loader2 className="size-5 animate-spin text-muted-foreground" /> : items.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">No companies yet.</p>
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border">
               {items.map((c, i) => (
-                <li key={c.id} className="flex items-center gap-3 px-3 py-2.5">
-                  <div className="flex flex-col">
-                    <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === 0 || !!busy} onClick={() => move(i, -1)} aria-label={`Move ${c.title} up`}>▲</button>
-                    <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === items.length - 1 || !!busy} onClick={() => move(i, 1)} aria-label={`Move ${c.title} down`}>▼</button>
+                <li key={c.id} className="flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1 px-3 py-2.5">
+                  <span className={cn('w-full flex-none sm:w-auto sm:flex-1 min-w-0 order-1 sm:order-2 text-sm font-medium break-words', !c.published && 'text-muted-foreground line-through')}>{c.title}</span>
+                  <div className="flex sm:flex-col shrink-0 order-2 sm:order-1">
+                    <button className="h-10 w-10 sm:h-6 sm:w-6 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === 0 || !!busy} onClick={() => move(i, -1)} aria-label={`Move ${c.title} up`}>▲</button>
+                    <button className="h-10 w-10 sm:h-6 sm:w-6 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={i === items.length - 1 || !!busy} onClick={() => move(i, 1)} aria-label={`Move ${c.title} down`}>▼</button>
                   </div>
-                  <span className={cn('flex-1 text-sm font-medium', !c.published && 'text-muted-foreground line-through')}>{c.title}</span>
-                  <Switch checked={c.published} onCheckedChange={(v) => call(c.id, `/api/admin/pipeline/${c.id}`, 'PATCH', { published: v })} aria-label={`Show ${c.title} on the site`} />
-                  <Button size="sm" variant="ghost" title="Rename" onClick={() => { const t = prompt('Company name', c.title)?.trim(); if (t) call(c.id, `/api/admin/pipeline/${c.id}`, 'PATCH', { title: t }, 'Renamed.') }}><Pencil className="size-4" /></Button>
-                  <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" title="Delete" disabled={busy === c.id}
-                    onClick={() => { if (confirm(`Remove ${c.title}?`)) call(c.id, `/api/admin/pipeline/${c.id}`, 'DELETE', undefined, 'Removed.') }}><Trash2 className="size-4" /></Button>
+                  <Switch className="shrink-0 order-3 ml-auto sm:ml-0" checked={c.published} onCheckedChange={(v) => call(c.id, `/api/admin/pipeline/${c.id}`, 'PATCH', { published: v })} aria-label={`Show ${c.title} on the site`} />
+                  <Button variant="ghost" className="size-10 sm:size-8 p-0 shrink-0 order-4" title="Rename" aria-label={`Rename ${c.title}`} onClick={async () => { const t = (await prompt({ title: 'Rename company', defaultValue: c.title, confirmLabel: 'Save' }))?.trim(); if (t) call(c.id, `/api/admin/pipeline/${c.id}`, 'PATCH', { title: t }, 'Renamed.') }}><Pencil className="size-4" /></Button>
+                  <Button variant="ghost" className="size-10 sm:size-8 p-0 shrink-0 order-5 text-destructive hover:text-destructive" title="Delete" aria-label={`Delete ${c.title}`} disabled={busy === c.id}
+                    onClick={async () => { if (await confirm({ title: `Remove ${c.title}?`, message: 'It will disappear from the landing page.', confirmLabel: 'Remove', destructive: true })) call(c.id, `/api/admin/pipeline/${c.id}`, 'DELETE', undefined, 'Removed.') }}><Trash2 className="size-4" /></Button>
                 </li>
               ))}
             </ul>
@@ -460,6 +483,9 @@ function CompaniesTab() {
 }
 
 function AnnouncementsTab() {
+  const { confirm, dialogs } = useDialogs()
+  const formRef = useRef<HTMLDivElement>(null)
+  const startEdit = (a: any) => { setEditing(a); setForm({ title: a.title, summary: a.summary, content: a.content, category: a.category, published: a.published, pinned: a.pinned }); setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }
   const [items, setItems] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<any | null>(null)
@@ -493,7 +519,7 @@ function AnnouncementsTab() {
     finally { setSaving(false) }
   }
   const remove = async (id: string) => {
-    if (!confirm('Delete this announcement? This cannot be undone.')) return
+    if (!(await confirm({ title: 'Delete this announcement?', message: 'This cannot be undone.', destructive: true }))) return
     setDeletingId(id)
     try {
       const res = await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
@@ -506,16 +532,18 @@ function AnnouncementsTab() {
 
   return (
     <div className="space-y-6">
+      {dialogs}
+      <div ref={formRef} className="scroll-mt-2" />
       <Card className="border-border/60">
         <CardHeader><CardTitle className="text-base">{editing ? 'Edit announcement' : 'New announcement'}</CardTitle></CardHeader>
         <CardContent className="space-y-3">
-          <div className="space-y-1.5"><Label>Title</Label><Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-          <div className="space-y-1.5"><Label>Summary</Label><Input value={form.summary} onChange={e => setForm({ ...form, summary: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Title</Label><Input className="h-11 sm:h-9" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
+          <div className="space-y-1.5"><Label>Summary</Label><Input className="h-11 sm:h-9" value={form.summary} onChange={e => setForm({ ...form, summary: e.target.value })} /></div>
           <div className="space-y-1.5"><Label>Content</Label><Textarea value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} rows={5} /></div>
           <div className="flex flex-wrap items-center gap-4">
             <div className="space-y-1.5">
               <Label>Category</Label>
-              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="rounded-md border border-input bg-background px-3 py-2 text-sm h-9">
+              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="rounded-md border border-input bg-background px-3 py-2 text-sm h-11 sm:h-9">
                 {['NEWS', 'UPDATE', 'EVENT', 'PARTNERSHIP', 'ACHIEVEMENT'].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
@@ -523,11 +551,11 @@ function AnnouncementsTab() {
             <div className="flex items-center gap-2 pt-5"><Switch checked={form.pinned} onCheckedChange={v => setForm({ ...form, pinned: v })} /> <Label>Pinned</Label></div>
           </div>
           <div className="flex gap-2">
-            <Button onClick={save} disabled={saving} className="bg-primary text-primary-foreground">
+            <Button onClick={save} disabled={saving} className="flex-1 sm:flex-none h-11 sm:h-9 bg-primary text-primary-foreground">
               {saving ? <Loader2 className="size-4 animate-spin mr-2" /> : null}
               {saving ? 'Saving...' : editing ? 'Save changes' : 'Publish'}
             </Button>
-            {editing && <Button variant="outline" onClick={() => { setEditing(null); setForm({ title: '', summary: '', content: '', category: 'NEWS', published: true, pinned: false }) }}>Cancel</Button>}
+            {editing && <Button variant="outline" className="h-11 sm:h-9" onClick={() => { setEditing(null); setForm({ title: '', summary: '', content: '', category: 'NEWS', published: true, pinned: false }) }}>Cancel</Button>}
           </div>
         </CardContent>
       </Card>
@@ -539,10 +567,10 @@ function AnnouncementsTab() {
             {items.map((a) => (
               <Card key={a.id} className="border-border/60">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{a.title}</span>
+                        <span className="font-medium break-words">{a.title}</span>
                         <Badge variant="secondary" className="text-[10px]">{a.category}</Badge>
                         {a.pinned && <Badge className="bg-primary/10 text-primary border-0 text-[10px]">Pinned</Badge>}
                         <Badge variant={a.published ? 'default' : 'secondary'} className={cn('text-[10px]', !a.published && 'bg-muted text-muted-foreground')}>{a.published ? 'Published' : 'Draft'}</Badge>
@@ -550,11 +578,11 @@ function AnnouncementsTab() {
                       <p className="text-xs text-muted-foreground mt-1">{a.summary}</p>
                       <p className="text-xs text-muted-foreground/70 mt-1">By {a.creator?.name || 'Unknown'} · {new Date(a.createdAt).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button size="sm" variant="ghost" onClick={() => setViewing(a)} title="View"><Eye className="size-4" /></Button>
-                      <Button size="sm" variant="ghost" onClick={() => { setEditing(a); setForm({ title: a.title, summary: a.summary, content: a.content, category: a.category, published: a.published, pinned: a.pinned }) }} title="Edit"><Pencil className="size-4" /></Button>
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" disabled={deletingId === a.id} onClick={() => remove(a.id)} title="Delete">
-                        {deletingId === a.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                    <div className="flex gap-1 shrink-0 border-t border-border/60 pt-2 sm:border-0 sm:pt-0">
+                      <Button variant="ghost" className="flex-1 sm:flex-none h-10 sm:h-8 sm:w-8 sm:p-0" onClick={() => setViewing(a)} title="View" aria-label="View"><Eye className="size-4" /><span className="sm:hidden ml-1.5 text-xs">View</span></Button>
+                      <Button variant="ghost" className="flex-1 sm:flex-none h-10 sm:h-8 sm:w-8 sm:p-0" onClick={() => startEdit(a)} title="Edit" aria-label="Edit"><Pencil className="size-4" /><span className="sm:hidden ml-1.5 text-xs">Edit</span></Button>
+                      <Button variant="ghost" className="flex-1 sm:flex-none h-10 sm:h-8 sm:w-8 sm:p-0 text-destructive hover:text-destructive" disabled={deletingId === a.id} onClick={() => remove(a.id)} title="Delete" aria-label="Delete">
+                        {deletingId === a.id ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}<span className="sm:hidden ml-1.5 text-xs">Delete</span>
                       </Button>
                     </div>
                   </div>
@@ -567,9 +595,9 @@ function AnnouncementsTab() {
 
       {/* View announcement dialog */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{viewing?.title}</DialogTitle>
+            <DialogTitle className="break-words pr-6">{viewing?.title}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
@@ -581,10 +609,10 @@ function AnnouncementsTab() {
             <p className="text-sm font-medium">{viewing?.summary}</p>
             <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{viewing?.content}</p>
             <div className="flex gap-2 pt-2">
-              <Button size="sm" variant="outline" onClick={() => { setEditing(viewing); setForm({ title: viewing.title, summary: viewing.summary, content: viewing.content, category: viewing.category, published: viewing.published, pinned: viewing.pinned }); setViewing(null) }}>
+              <Button variant="outline" className="flex-1 sm:flex-none h-11 sm:h-8" onClick={() => { startEdit(viewing); setViewing(null) }}>
                 <Pencil className="size-4 mr-1" /> Edit
               </Button>
-              <Button size="sm" variant="outline" onClick={() => setViewing(null)}>Close</Button>
+              <Button variant="outline" className="flex-1 sm:flex-none h-11 sm:h-8" onClick={() => setViewing(null)}>Close</Button>
             </div>
           </div>
         </DialogContent>
@@ -595,6 +623,7 @@ function AnnouncementsTab() {
 
 // ── Waitlist ──
 function WaitlistTab() {
+  const { confirm, dialogs } = useDialogs()
   const [entries, setEntries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const fetch_ = async () => {
@@ -609,32 +638,33 @@ function WaitlistTab() {
     fetch_()
   }
   const remove = async (id: string) => {
-    if (!confirm('Remove this waitlist entry?')) return
+    if (!(await confirm({ title: 'Remove this waitlist entry?', confirmLabel: 'Remove', destructive: true }))) return
     await fetch(`/api/admin/waitlist/${id}`, { method: 'DELETE' })
     fetch_()
   }
   if (loading) return <CenterSpinner />
   return (
     <div className="space-y-4">
+      {dialogs}
       <h3 className="font-semibold">Waitlist entries ({entries.length})</h3>
       {entries.length === 0 ? <EmptyCard text="No waitlist entries yet." /> : (
         <div className="space-y-2">
           {entries.map((e) => (
             <Card key={e.id} className="border-border/60">
               <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{e.name}</span>
                       <Badge variant={e.status === 'CONFIRMED' ? 'default' : 'secondary'} className={cn('text-[10px]', e.status === 'CONTACTED' && 'bg-emerald-500/10 text-emerald-600 border-0')}>{e.status}</Badge>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{e.email}{e.company ? ` · ${e.company}` : ''}{e.role ? ` · ${e.role}` : ''}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 break-all">{e.email}{e.company ? ` · ${e.company}` : ''}{e.role ? ` · ${e.role}` : ''}</div>
                     {e.interest && <p className="text-sm mt-1.5">Interest: {e.interest}</p>}
-                    {e.message && <p className="text-xs text-muted-foreground mt-1">{e.message}</p>}
+                    {e.message && <p className="text-xs text-muted-foreground mt-1 break-words">{e.message}</p>}
                   </div>
-                  <div className="flex gap-1 shrink-0">
-                    {e.status === 'CONFIRMED' && <Button size="sm" variant="outline" onClick={() => markContacted(e.id)}>Mark contacted</Button>}
-                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(e.id)}><Trash2 className="size-4" /></Button>
+                  <div className="flex gap-2 sm:gap-1 shrink-0">
+                    {e.status === 'CONFIRMED' && <Button variant="outline" className="flex-1 sm:flex-none h-10 sm:h-8" onClick={() => markContacted(e.id)}>Mark contacted</Button>}
+                    <Button variant="ghost" className="size-10 sm:size-8 p-0 text-destructive hover:text-destructive" aria-label="Remove entry" onClick={() => remove(e.id)}><Trash2 className="size-4" /></Button>
                   </div>
                 </div>
               </CardContent>
@@ -650,27 +680,34 @@ function WaitlistTab() {
 function ActivityTab() {
   const [logs, setLogs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  useEffect(() => {
-    fetch('/api/admin/activity?limit=200').then(r => r.json()).then(d => { if (d.logs) setLogs(d.logs) }).finally(() => setLoading(false))
+  const load = useCallback(async () => {
+    setLoading(true)
+    try {
+      const r = await fetch('/api/admin/activity?limit=200')
+      const d = await r.json()
+      if (d.logs) setLogs(d.logs)
+    } catch { toast.error('Network error.') }
+    finally { setLoading(false) }
   }, [])
-  if (loading) return <CenterSpinner />
+  useEffect(() => { load() }, [load])
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
         <h3 className="font-semibold">Activity log ({logs.length})</h3>
-        <Button size="sm" variant="outline" onClick={() => window.location.reload()}><RefreshCw className="size-3.5 mr-1.5" /> Refresh</Button>
+        <Button variant="outline" className="h-10 sm:h-8" onClick={load} disabled={loading}><RefreshCw className={cn('size-3.5 mr-1.5', loading && 'animate-spin')} /> Refresh</Button>
       </div>
-      {logs.length === 0 ? <EmptyCard text="No activity recorded yet." /> : (
+      {loading && logs.length === 0 ? <CenterSpinner /> : logs.length === 0 ? <EmptyCard text="No activity recorded yet." /> : (
         <Card className="border-border/60"><CardContent className="p-0">
-          <div className="divide-y divide-border max-h-[60vh] overflow-y-auto nexora-scroll">
+          <div className="divide-y divide-border">
             {logs.map((l) => (
               <div key={l.id} className="flex items-start gap-3 p-3">
-                <div className="size-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                <div className="size-2 rounded-full bg-primary mt-2 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm"><span className="font-medium">{l.user?.name || 'System'}</span> <span className="text-muted-foreground">{l.action.replace(/_/g, ' ')}</span></div>
-                  {l.details && l.details !== '{}' && <div className="text-xs text-muted-foreground font-mono truncate">{l.details}</div>}
+                  {l.details && l.details !== '{}' && <div className="text-xs text-muted-foreground font-mono break-all line-clamp-2">{l.details}</div>}
+                  <div className="text-xs text-muted-foreground mt-0.5 sm:hidden">{new Date(l.createdAt).toLocaleString()}</div>
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0">{new Date(l.createdAt).toLocaleString()}</span>
+                <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">{new Date(l.createdAt).toLocaleString()}</span>
               </div>
             ))}
           </div>

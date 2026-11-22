@@ -329,7 +329,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   } else if (main.kind === 'all-spaces') {
     content = <AllSpaces spaces={spaces} isAdmin={isAdmin} onOpen={goSpace} onCreate={() => setNewSpaceOpen(true)} onOpenSidebar={openSidebar} />
   } else if (main.kind === 'console') {
-    content = <SimplePane title="Admin console" onMenu={openSidebar}><AdminConsole user={user} /></SimplePane>
+    content = <SimplePane title="Admin console" onMenu={openSidebar} scroll={false}><AdminConsole user={user} /></SimplePane>
   } else if (main.kind === 'notifications') {
     content = <SimplePane title="Notifications" onMenu={openSidebar}><NotificationsPanel /></SimplePane>
   } else if (main.kind === 'profile') {
@@ -386,7 +386,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
 }
 
 // Wrapper for full-page views (console, notifications, profile): gives mobile a back button + menu button.
-function SimplePane({ title, onMenu, children }: { title: string; onMenu: () => void; children: React.ReactNode }) {
+function SimplePane({ title, onMenu, children, scroll = true }: { title: string; onMenu: () => void; children: React.ReactNode; scroll?: boolean }) {
   return (
     <div className="h-full flex flex-col">
       <header className="md:hidden h-14 shrink-0 border-b border-border flex items-center gap-1 px-2">
@@ -394,7 +394,7 @@ function SimplePane({ title, onMenu, children }: { title: string; onMenu: () => 
         <h1 className="font-semibold text-sm flex-1 truncate">{title}</h1>
         <Button variant="ghost" size="icon" onClick={onMenu} aria-label="Open menu"><Menu className="size-5" /></Button>
       </header>
-      <div className="flex-1 min-h-0 overflow-y-auto nexora-scroll">{children}</div>
+      <div className={scroll ? 'flex-1 min-h-0 overflow-y-auto nexora-scroll' : 'flex-1 min-h-0'}>{children}</div>
     </div>
   )
 }
