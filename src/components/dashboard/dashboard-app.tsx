@@ -306,6 +306,31 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   )
 
   const openSidebar = () => setNavOpen(true)
+
+  // The workspace is a fixed-height app, so the page itself must never scroll. When the on-screen keyboard opens we
+  // size the app to the visible viewport (and follow its offset on iOS) instead of letting the browser scroll the page.
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.add('nx-app-lock')
+    const vv = window.visualViewport
+    const apply = () => {
+      root.style.setProperty('--app-h', `${vv?.height ?? window.innerHeight}px`)
+      root.style.setProperty('--app-top', `${vv?.offsetTop ?? 0}px`)
+      if (window.scrollY) window.scrollTo(0, 0)
+    }
+    apply()
+    vv?.addEventListener('resize', apply)
+    vv?.addEventListener('scroll', apply)
+    window.addEventListener('resize', apply)
+    return () => {
+      vv?.removeEventListener('resize', apply)
+      vv?.removeEventListener('scroll', apply)
+      window.removeEventListener('resize', apply)
+      root.classList.remove('nx-app-lock')
+      root.style.removeProperty('--app-h')
+      root.style.removeProperty('--app-top')
+    }
+  }, [])
   const threadOpen = !!liveThread && main.kind === 'chat'
 
   let content: React.ReactNode = null
@@ -343,7 +368,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   if (loading) return <div className="h-dvh flex items-center justify-center bg-background"><Loader2 className="size-6 animate-spin text-primary" /></div>
 
   return (
-    <div className="h-dvh flex bg-background text-foreground overflow-hidden">
+    <div className="flex bg-background text-foreground overflow-hidden" style={{ height: 'var(--app-h, 100dvh)', transform: 'translateY(var(--app-top, 0px))' }}>
       {/* desktop: rail + sidebar */}
       <div className="hidden md:flex shrink-0">
         {rail}

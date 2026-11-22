@@ -34,7 +34,7 @@ export function Composer({
     if (!mention) return
     setText(text.slice(0, mention.index + mention[1].length) + `@${name} `)
     setPick(0)
-    ref.current?.focus()
+    ref.current?.focus({ preventScroll: true })
   }
 
   const submit = async () => {
@@ -45,7 +45,7 @@ export function Composer({
     const ok = await onSend(content)
     setBusy(false)
     if (ok) setText('')
-    ref.current?.focus()
+    ref.current?.focus({ preventScroll: true })
   }
 
   const resize = (el: HTMLTextAreaElement) => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px' }
@@ -82,9 +82,9 @@ export function Composer({
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submit() }
           }}
           placeholder={placeholder}
-          className="flex-1 resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground max-h-40 py-1"
+          className="flex-1 resize-none bg-transparent text-base sm:text-sm outline-none placeholder:text-muted-foreground max-h-40 py-1"
         />
-        <Button size="icon" onClick={submit} disabled={disabled || busy || !text.trim()} className="size-8 shrink-0 rounded-lg" aria-label="Send message">
+        <Button size="icon" onMouseDown={(e) => e.preventDefault()} onClick={submit} disabled={disabled || busy || !text.trim()} className="size-9 sm:size-8 shrink-0 rounded-full sm:rounded-lg" aria-label="Send message">
           {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
         </Button>
       </div>

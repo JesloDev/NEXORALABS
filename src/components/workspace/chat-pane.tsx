@@ -62,8 +62,17 @@ export function ChatPane({
   useEffect(() => { stick.current = true }, [chat.id])
   useEffect(() => {
     const last = messages[messages.length - 1]
-    if (stick.current || last?.senderId === currentUser.id) bottomRef.current?.scrollIntoView({ behavior: 'auto' })
+    // scroll the message list itself; scrollIntoView would also scroll the whole page
+    if (stick.current || last?.senderId === currentUser.id) { const el = listRef.current; if (el) el.scrollTop = el.scrollHeight }
   }, [messages.length, chat.id, currentUser.id])
+  // when the on-screen keyboard opens/closes the list resizes; keep the latest message in view
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const keep = () => { const el = listRef.current; if (el && stick.current) el.scrollTop = el.scrollHeight }
+    vv.addEventListener('resize', keep)
+    return () => vv.removeEventListener('resize', keep)
+  }, [])
 
   const join = async () => {
     const r = await api(`/api/chats/${chat.id}/join`, { method: 'POST' })
@@ -109,7 +118,7 @@ export function ChatPane({
       </div>)
     const compact = !newDay && !!prev && prev.senderId === m.senderId && new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < 5 * 60_000
     rows.push(
-      <MessageItem key={m.id} m={m} compact={compact} mine={m.senderId === currentUser.id} currentUserId={currentUser.id}
+      <MessageItem key={m.id} m={m} compact={compact} showSender={chat.type !== 'DIRECT'} mine={m.senderId === currentUser.id} currentUserId={currentUser.id}
         canModerate={!!chat.canModerate} readOnly={readOnly} names={names}
         onReact={actions.react} onReply={onOpenThread} onEdit={actions.edit} onDelete={actions.remove} />)
     prev = m
@@ -187,7 +196,7 @@ export function ChatPane({
         ) : (
           <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground text-center">
             <ShieldCheck className="size-4 inline mr-1.5 text-primary" />
-            {chat.archived ? 'This channel is archived.' : "You're monitoring this conversation (read-only)."}
+            {chat.archived ? 'This channel is archived.' : 'You can\'t post in this conversation.'}
           </div>
         )}
       </footer>

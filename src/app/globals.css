@@ -168,3 +168,8 @@
 .glow-ring {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand) 20%, transparent), 0 12px 36px -16px color-mix(in oklab, var(--brand) 45%, transparent);
 }
+
+/* Workspace (dashboard): fixed-height app. The page never scrolls, so the on-screen keyboard can't push it around. */
+html.nx-app-lock,
+html.nx-app-lock body { overflow: hidden; overscroll-behavior: none; }
+html.nx-app-lock body { position: fixed; inset: 0; width: 100%; }

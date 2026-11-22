@@ -44,6 +44,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#eae2cb",
+  interactiveWidget: "resizes-content", // Android Chrome: the page shrinks above the keyboard instead of scrolling
   width: "device-width",
   initialScale: 1,
 };
