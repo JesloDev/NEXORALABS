@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Logo } from '@/components/site/logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -144,7 +145,7 @@ export default function InvitePage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="password">Password * <span className="text-muted-foreground font-normal">(min 8 characters)</span></Label>
-                      <Input id="password" type="password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
+                      <PasswordInput id="password" autoComplete="new-password" showStrength required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
                     </div>
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">

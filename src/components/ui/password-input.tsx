@@ -37,15 +37,14 @@ export const PasswordInput = ({ className, showStrength, value, ...props }: Pass
         <Input
           type={show ? 'text' : 'password'}
           value={value}
-          className={cn('pr-10', className)}
+          className={cn('pr-11', className)}
           {...props}
         />
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
-          className="absolute right-0 top-0 h-full px-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+          className="absolute right-0 top-0 h-full w-11 flex items-center justify-center rounded-r-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring transition-colors"
           aria-label={show ? 'Hide password' : 'Show password'}
-          tabIndex={-1}
         >
           {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
         </button>
