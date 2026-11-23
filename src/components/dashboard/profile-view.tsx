@@ -157,7 +157,8 @@ export function ProfileView({ user: initialUser }: { user: ProfileUser }) {
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="p-title">Title</Label>
-                  <Input id="p-title" value={profile.title} onChange={(e) => setProfile({ ...profile, title: e.target.value })} placeholder="e.g. Product Engineer" />
+                  <Input id="p-title" value={profile.title} onChange={(e) => setProfile({ ...profile, title: e.target.value })} placeholder={user.role === 'EMPLOYEE' ? 'Not set yet' : 'e.g. Product Engineer'} disabled={user.role === 'EMPLOYEE'} />
+                  {user.role === 'EMPLOYEE' && <p className="text-xs text-muted-foreground">Your title is set by an admin.</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="p-dept">Department</Label>

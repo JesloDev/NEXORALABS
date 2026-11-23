@@ -22,7 +22,7 @@ export default function InvitePage() {
   const [submitting, setSubmitting] = useState(false)
   const [done, setDone] = useState(false)
   const [devVerifyUrl, setDevVerifyUrl] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', email: '', password: '', title: '', department: '', phone: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', department: '', phone: '' })
 
   useEffect(() => {
     if (!token) return
@@ -147,15 +147,9 @@ export default function InvitePage() {
                       <Label htmlFor="password">Password * <span className="text-muted-foreground font-normal">(min 8 characters)</span></Label>
                       <PasswordInput id="password" autoComplete="new-password" showStrength required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="••••••••" />
                     </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="title">Job title</Label>
-                        <Input id="title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. Software Engineer" />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="department">Department</Label>
-                        <Input id="department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="e.g. Engineering" />
-                      </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="department">Department</Label>
+                      <Input id="department" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} placeholder="e.g. Engineering" />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor="phone">Phone</Label>

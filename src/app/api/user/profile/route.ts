@@ -17,7 +17,8 @@ export async function PATCH(req: NextRequest) {
 
   const data: any = {}
   if (typeof body?.name === 'string' && body.name.trim().length >= 2) data.name = body.name.trim()
-  if (typeof body?.title === 'string') data.title = body.title.trim() || null
+  // job title is assigned by admins (Admin console → Users); members can't set their own
+  if (typeof body?.title === 'string' && (me.role === 'ADMIN' || me.role === 'SUPER_ADMIN')) data.title = body.title.trim() || null
   if (typeof body?.department === 'string') data.department = body.department.trim() || null
   if (typeof body?.phone === 'string') data.phone = body.phone.trim() || null
   if (typeof body?.bio === 'string') data.bio = body.bio.trim() || null

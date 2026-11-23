@@ -8,7 +8,7 @@ import { sendEmail, emailShell } from '@/lib/email'
 
 export const dynamic = 'force-dynamic'
 
-// PATCH: suspend / unsuspend / change role
+// PATCH: suspend / unsuspend / change access level (role) / set job title
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const me = await getActiveSessionUser()
   if (!me || !isAdmin(me.role)) return json({ error: 'Unauthorized' }, 401)
@@ -16,18 +16,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ us
   let body: any
   try { body = await req.json() } catch { return badRequest('Invalid body') }
 
-  const target = await db.user.findUnique({ where: { id: userId }, select: { id: true, email: true, name: true, role: true, status: true } })
+  const target = await db.user.findUnique({ where: { id: userId }, select: { id: true, email: true, name: true, role: true, status: true, title: true } })
   if (!target) return notFound('User not found.')
 
   const actions: string[] = []
 
   // Role change
   if (body?.role && body.role !== target.role) {
+    if (userId === me.id) return json({ error: 'You cannot change your own role.' }, 400)
     const { changeRole } = canManageUser(me.role, target.role)
     if (!changeRole) return json({ error: 'You cannot change this user\'s role.' }, 403)
     if (!['ADMIN', 'EMPLOYEE'].includes(body.role)) return badRequest('Invalid role.')
     await db.user.update({ where: { id: userId }, data: { role: body.role } })
     actions.push(`role changed to ${body.role}`)
+  }
+
+  // Job title (shown to the team; assigned by admins)
+  if (typeof body?.title === 'string' || body?.title === null) {
+    if (target.role === 'SUPER_ADMIN' && me.role !== 'SUPER_ADMIN') return json({ error: 'You cannot edit a super admin\'s title.' }, 403)
+    const title = (body.title || '').trim().slice(0, 80) || null
+    if (title !== (target.title ?? null)) {
+      await db.user.update({ where: { id: userId }, data: { title } })
+      actions.push(title ? `title set to "${title}"` : 'title cleared')
+    }
   }
 
   // Suspend / unsuspend

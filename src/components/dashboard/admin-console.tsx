@@ -115,6 +115,28 @@ function OverviewTab() {
 // ── Users ──
 function UsersTab({ currentUserId, currentRole }: { currentUserId: string; currentRole: string }) {
   const { confirm, dialogs } = useDialogs()
+  const [editing, setEditing] = useState<any | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editRole, setEditRole] = useState('EMPLOYEE')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const openEdit = (u: any) => { setEditing(u); setEditTitle(u.title || ''); setEditRole(u.role) }
+  const saveEdit = async () => {
+    if (!editing) return
+    const body: Record<string, unknown> = {}
+    if (editTitle.trim() !== (editing.title || '')) body.title = editTitle.trim()
+    if (editRole !== editing.role && editing.id !== currentUserId) body.role = editRole
+    if (Object.keys(body).length === 0) return setEditing(null)
+    setSavingEdit(true)
+    try {
+      const res = await fetch(`/api/admin/users/${editing.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) return toast.error(data.error || 'Could not save.')
+      toast.success('Member updated.')
+      setEditing(null)
+      fetchUsers()
+    } catch { toast.error('Network error.') }
+    finally { setSavingEdit(false) }
+  }
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -128,13 +150,6 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
 
   const filtered = users.filter(u => !q || u.name.toLowerCase().includes(q.toLowerCase()) || u.email.toLowerCase().includes(q.toLowerCase()))
 
-  const updateRole = async (userId: string, role: string) => {
-    const res = await fetch(`/api/admin/users/${userId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) })
-    const data = await res.json()
-    if (!res.ok) return toast.error(data.error)
-    toast.success('Role updated.')
-    fetchUsers()
-  }
   const toggleSuspend = async (userId: string, suspend: boolean) => {
     const res = await fetch(`/api/admin/users/${userId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ suspend }) })
     const data = await res.json()
@@ -154,6 +169,35 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
   return (
     <div className="space-y-4">
       {dialogs}
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null) }}>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
+          <form onSubmit={(e) => { e.preventDefault(); saveEdit() }} className="grid gap-4">
+            <DialogHeader><DialogTitle>Edit {editing?.name}</DialogTitle></DialogHeader>
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-title">Job title</Label>
+              <Input id="edit-title" className="h-11" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="e.g. Marketing Lead" maxLength={80} />
+            </div>
+            {editing && editing.id !== currentUserId && editing.role !== 'SUPER_ADMIN' && (
+              <fieldset className="space-y-1.5">
+                <legend className="text-sm font-medium mb-1.5">Access level</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {[{ v: 'EMPLOYEE', l: 'Team member', d: 'Chat, spaces, pages' }, { v: 'ADMIN', l: 'Admin', d: 'Plus admin console' }].map((o) => (
+                    <button key={o.v} type="button" onClick={() => setEditRole(o.v)} aria-pressed={editRole === o.v}
+                      className={cn('rounded-lg border p-3 text-left min-h-14', editRole === o.v ? 'border-primary bg-primary/10 ring-1 ring-primary' : 'border-input hover:bg-muted')}>
+                      <div className="text-sm font-medium">{o.l}</div>
+                      <div className="text-xs text-muted-foreground">{o.d}</div>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+            )}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" className="flex-1 sm:flex-none h-11 sm:h-9" onClick={() => setEditing(null)}>Cancel</Button>
+              <Button type="submit" disabled={savingEdit} className="flex-1 sm:flex-none h-11 sm:h-9">{savingEdit ? <Loader2 className="size-4 animate-spin mr-2" /> : null}Save</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="font-semibold">Team members ({users.length})</h3>
         <div className="relative w-full sm:w-72">
@@ -176,22 +220,26 @@ function UsersTab({ currentUserId, currentRole }: { currentUserId: string; curre
                           <span className="font-medium text-sm truncate">{u.name}{isSelf && ' (you)'}</span>
                           {isSuper && <Crown className="size-3 text-amber-500 shrink-0" />}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">{u.email}{u.title ? ` · ${u.title}` : ''}</div>
+                        <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">{u.title || <span className="italic">No title</span>} · {u.role === 'SUPER_ADMIN' ? 'Super admin' : u.role === 'ADMIN' ? 'Admin' : 'Team member'}</div>
                       </div>
                       <Badge variant={u.status === 'ACTIVE' ? 'default' : 'secondary'} className={cn('text-[10px] shrink-0', u.status === 'SUSPENDED' && 'bg-amber-500/10 text-amber-600 border-0', u.status === 'PENDING' && 'bg-sky-500/10 text-sky-600 border-0')}>{u.status}</Badge>
                     </div>
-                    {!isSelf && !isSuper && currentRole !== 'EMPLOYEE' && (
+                    {currentRole !== 'EMPLOYEE' && !(isSuper && currentRole !== 'SUPER_ADMIN') && (
                       <div className="flex items-center gap-2 sm:gap-1">
-                        <select aria-label={`Role for ${u.name}`} value={u.role} onChange={e => updateRole(u.id, e.target.value)} disabled={currentRole === 'ADMIN'} className="flex-1 sm:flex-none text-sm sm:text-xs rounded-md border border-input bg-background px-2 h-10 sm:h-8">
-                          <option value="EMPLOYEE">Team</option>
-                          <option value="ADMIN">Admin</option>
-                        </select>
-                        <Button size="icon" variant="outline" className="size-10 sm:size-8 sm:border-0 sm:bg-transparent" onClick={() => toggleSuspend(u.id, u.status !== 'SUSPENDED')} title={u.status === 'SUSPENDED' ? 'Reactivate' : 'Suspend'} aria-label={u.status === 'SUSPENDED' ? 'Reactivate user' : 'Suspend user'}>
-                          {u.status === 'SUSPENDED' ? <CheckCircle2 className="size-4 text-emerald-500" /> : <Ban className="size-4 text-amber-500" />}
+                        <Button variant="outline" className="flex-1 sm:flex-none h-10 sm:h-8 sm:border-0 sm:bg-transparent" onClick={() => openEdit(u)} aria-label={`Edit ${u.name}`}>
+                          <Pencil className="size-4 mr-1.5 sm:mr-0" /><span className="sm:hidden text-sm">Edit role & title</span>
                         </Button>
-                        <Button size="icon" variant="outline" className="size-10 sm:size-8 sm:border-0 sm:bg-transparent hover:text-destructive" onClick={() => deleteUser(u.id)} title="Delete" aria-label="Delete user">
-                          <Trash2 className="size-4" />
-                        </Button>
+                        {!isSelf && !isSuper && (
+                          <>
+                            <Button size="icon" variant="outline" className="size-10 sm:size-8 sm:border-0 sm:bg-transparent" onClick={() => toggleSuspend(u.id, u.status !== 'SUSPENDED')} title={u.status === 'SUSPENDED' ? 'Reactivate' : 'Suspend'} aria-label={u.status === 'SUSPENDED' ? 'Reactivate user' : 'Suspend user'}>
+                              {u.status === 'SUSPENDED' ? <CheckCircle2 className="size-4 text-emerald-500" /> : <Ban className="size-4 text-amber-500" />}
+                            </Button>
+                            <Button size="icon" variant="outline" className="size-10 sm:size-8 sm:border-0 sm:bg-transparent hover:text-destructive" onClick={() => deleteUser(u.id)} title="Delete" aria-label="Delete user">
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

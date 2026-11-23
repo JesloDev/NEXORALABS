@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   const email = (body?.email || '').trim().toLowerCase()
   const name = (body?.name || '').trim()
   const password = body?.password || ''
-  const title = (body?.title || '').trim() || null
+  const title = null // job titles are assigned by admins, not chosen at registration
   const department = (body?.department || '').trim() || null
   const phone = (body?.phone || '').trim() || null
 

@@ -21,6 +21,7 @@ export function isAdmin(role: Role | string): boolean {
 // - SUPER_ADMIN can never be deleted or suspended by anyone.
 // - ADMIN can be deleted/suspended only by SUPER_ADMIN.
 // - EMPLOYEE can be deleted/suspended by SUPER_ADMIN or ADMIN.
+// - Access level (Team member <-> Admin) can be changed by SUPER_ADMIN or ADMIN for anyone except a SUPER_ADMIN.
 export function canManageUser(
   actorRole: Role,
   targetRole: Role,
@@ -33,9 +34,9 @@ export function canManageUser(
     return { suspend: true, delete: true, changeRole: true }
   }
   if (actorRole === 'ADMIN') {
-    if (targetRole === 'ADMIN') return { suspend: false, delete: false, changeRole: false }
+    if (targetRole === 'ADMIN') return { suspend: false, delete: false, changeRole: true }
     // admin vs employee
-    return { suspend: true, delete: true, changeRole: false }
+    return { suspend: true, delete: true, changeRole: true }
   }
   // employees cannot manage anyone
   return { suspend: false, delete: false, changeRole: false }
