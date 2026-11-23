@@ -2,7 +2,7 @@
   "packageId": "com.nexoralabs.app",
   "host": "YOUR-DOMAIN.com",
   "name": "NEXORALABS",
-  "launcherName": "NEXORA",
+  "launcherName": "NEXORALABS",
   "display": "standalone",
   "orientation": "portrait",
   "themeColor": "#eae2cb",

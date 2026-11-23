@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
     name: 'NEXORALABS',
-    short_name: 'NEXORA',
+    short_name: 'NEXORALABS',
     description: 'NEXORALABS — turning ideas into sustainable solutions. Team workspace, chat and spaces.',
     start_url: '/dashboard',
     scope: '/',

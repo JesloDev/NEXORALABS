@@ -41,7 +41,8 @@ You need: Node 18+, a JDK 17, and the Android command-line tools. Bubblewrap off
    Verify: `https://YOUR-DOMAIN.com/.well-known/assetlinks.json` returns the JSON.
 5. Install: send `app-release-signed.apk` to the phone (WhatsApp, Drive, direct link), open it, and allow
    "Install unknown apps" for that app when Android asks.
-6. Updating the app itself: bump `appVersion` / `appVersionCode` in `twa-manifest.json`, run `bubblewrap update`
+6. The name under the icon (`launcherName`) is baked into the APK. To change it, edit `twa-manifest.json`, rebuild, and reinstall the app on the phone.
+7. Updating the app itself: bump `appVersion` / `appVersionCode` in `twa-manifest.json`, run `bubblewrap update`
    then `bubblewrap build`, and share the new APK.
 
 No toolchain on your machine? https://www.pwabuilder.com does the same build online for a URL and gives a signed APK.
