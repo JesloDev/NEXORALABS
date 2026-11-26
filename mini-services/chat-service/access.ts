@@ -12,6 +12,9 @@
 //    joinable; private spaces are invite-only.
 //  - Public channels: any space member can read, join, post. Private channels:
 //    channel members + org admins only.
+//  - GUESTS (outside collaborators invited by a space link) are not employees.
+//    They see ONLY spaces they are a member of: no admin view, no public join,
+//    no DMs, no directory. Org-wide admin rules never apply to them.
 import type { PrismaClient, Chat, Space, SpaceMember, SpaceRole } from '@prisma/client'
 
 export interface Actor {
@@ -20,6 +23,7 @@ export interface Actor {
 }
 
 export const isOrgAdmin = (role: string) => role === 'ADMIN' || role === 'SUPER_ADMIN'
+export const isGuest = (role: string) => role === 'GUEST'
 const MANAGER_ROLES: SpaceRole[] = ['OWNER', 'ADMIN']
 
 export interface SpaceAccess {
@@ -36,14 +40,15 @@ export async function getSpaceAccess(db: PrismaClient, actor: Actor, spaceId: st
   if (!space) return null
   const member = await db.spaceMember.findUnique({ where: { spaceId_userId: { spaceId, userId: actor.id } } })
   const admin = isOrgAdmin(actor.role)
+  const guest = isGuest(actor.role)
   const canViewContent = !!member || admin
   return {
     space,
     member,
     viaAdmin: admin && !member,
     canViewContent,
-    canJoin: !member && (space.visibility === 'PUBLIC' || admin) && !space.archived,
-    canManage: admin || (!!member && MANAGER_ROLES.includes(member.role)),
+    canJoin: !guest && !member && (space.visibility === 'PUBLIC' || admin) && !space.archived,
+    canManage: admin || (!guest && !!member && MANAGER_ROLES.includes(member.role)),
   }
 }
 
@@ -100,6 +105,12 @@ export async function getChatAccess(db: PrismaClient, actor: Actor, chatId: stri
 // Rooms a socket should auto-join on connect.
 export async function realtimeChatIds(db: PrismaClient, actor: Actor): Promise<string[]> {
   const mine = (await db.chatMember.findMany({ where: { userId: actor.id }, select: { chatId: true } })).map((m) => m.chatId)
+  if (isGuest(actor.role)) {
+    // only channels of spaces they still belong to
+    const spaceIds = (await db.spaceMember.findMany({ where: { userId: actor.id }, select: { spaceId: true } })).map((m) => m.spaceId)
+    const ok = await db.chat.findMany({ where: { id: { in: mine }, type: 'CHANNEL', spaceId: { in: spaceIds } }, select: { id: true } })
+    return ok.map((c) => c.id)
+  }
   if (isOrgAdmin(actor.role)) {
     const channels = (await db.chat.findMany({ where: { type: 'CHANNEL' }, select: { id: true } })).map((c) => c.id)
     return Array.from(new Set([...mine, ...channels]))

@@ -19,12 +19,12 @@ function RailButton({ label, active, onClick, children, badge, danger }: { label
 
 export function SpaceRail({
   spaces, ctx, onHome, onSpace, onAllSpaces, onCreateSpace, onSearch, onNotifications, onProfile, onConsole, onTheme, onSignOut,
-  isAdmin, dark, homeUnread, notificationsActive, consoleActive, allSpacesActive, profileActive,
+  isAdmin, isGuest = false, dark, homeUnread, notificationsActive, consoleActive, allSpacesActive, profileActive,
 }: {
   spaces: SpaceSummary[]; ctx: 'home' | string
   onHome: () => void; onSpace: (id: string) => void; onAllSpaces: () => void; onCreateSpace: () => void
   onSearch: () => void; onNotifications: () => void; onProfile: () => void; onConsole: () => void; onTheme: () => void; onSignOut: () => void
-  isAdmin: boolean; dark: boolean; homeUnread: number; notificationsActive: boolean; consoleActive: boolean; allSpacesActive: boolean; profileActive: boolean
+  isAdmin: boolean; isGuest?: boolean; dark: boolean; homeUnread: number; notificationsActive: boolean; consoleActive: boolean; allSpacesActive: boolean; profileActive: boolean
 }) {
   // members' spaces first; admin-only (not joined) spaces live in the "All spaces" directory to keep the rail short
   const mine = spaces.filter((s) => s.isMember)
@@ -35,7 +35,7 @@ export function SpaceRail({
   return (
     <nav aria-label="Spaces" className="w-[68px] shrink-0 bg-rail text-rail-foreground flex flex-col items-center py-3 gap-2 h-full">
       <div className="mb-1"><Logo size={38} variant="icon" /></div>
-      <RailButton label="Home & direct messages" active={ctx === 'home' && !allSpacesActive && !notificationsActive && !consoleActive} onClick={onHome} badge={homeUnread}><Home className="size-5" /></RailButton>
+      {!isGuest && <RailButton label="Home & direct messages" active={ctx === 'home' && !allSpacesActive && !notificationsActive && !consoleActive} onClick={onHome} badge={homeUnread}><Home className="size-5" /></RailButton>}
       <RailButton label="Search (Ctrl+K)" onClick={onSearch}><Search className="size-5" /></RailButton>
       <div className="w-8 h-px bg-white/15 my-1" />
 
@@ -51,8 +51,8 @@ export function SpaceRail({
             </button>
           )
         })}
-        <RailButton label={isAdmin ? 'All spaces (admin)' : 'Browse spaces'} active={allSpacesActive} onClick={onAllSpaces}><LayoutGrid className="size-5" /></RailButton>
-        {isAdmin && <RailButton label="Create a space" onClick={onCreateSpace}><Plus className="size-5" /></RailButton>}
+        {!isGuest && <RailButton label={isAdmin ? 'All spaces (admin)' : 'Browse spaces'} active={allSpacesActive} onClick={onAllSpaces}><LayoutGrid className="size-5" /></RailButton>}
+        {!isGuest && <RailButton label="Create a space" onClick={onCreateSpace}><Plus className="size-5" /></RailButton>}
       </div>
 
       <div className="flex flex-col items-center gap-1.5 pt-2 border-t border-white/10 w-full">

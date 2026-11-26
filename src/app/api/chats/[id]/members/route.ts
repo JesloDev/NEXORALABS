@@ -20,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!userIds.length) return badRequest('Select at least one member to add.')
 
   // all must be active verified users
-  const users = await db.user.findMany({ where: { id: { in: userIds }, status: 'ACTIVE', emailVerified: { not: null } }, select: { id: true } })
+  const users = await db.user.findMany({ where: { id: { in: userIds }, status: 'ACTIVE', emailVerified: { not: null }, ...(acc.chat.type === 'CHANNEL' ? {} : { role: { not: 'GUEST' as const } }) }, select: { id: true } })
   let validIds = users.map((u) => u.id)
   // channel members must belong to the channel's space
   if (acc.chat.type === 'CHANNEL' && acc.chat.spaceId) {

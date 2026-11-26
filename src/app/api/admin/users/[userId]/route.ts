@@ -24,6 +24,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ us
   // Role change
   if (body?.role && body.role !== target.role) {
     if (userId === me.id) return json({ error: 'You cannot change your own role.' }, 400)
+    if (target.role === 'GUEST') return json({ error: 'Guests are outside collaborators. Their role cannot be changed here.' }, 400)
     const { changeRole } = canManageUser(me.role, target.role)
     if (!changeRole) return json({ error: 'You cannot change this user\'s role.' }, 403)
     if (!['ADMIN', 'EMPLOYEE'].includes(body.role)) return badRequest('Invalid role.')

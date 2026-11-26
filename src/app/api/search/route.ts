@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
-import { isOrgAdmin } from '@/lib/access'
+import { isOrgAdmin, isGuest } from '@/lib/access'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         deletedAt: null, content: { contains: q },
         chat: {
           OR: [
-            { members: { some: { userId: me.id } } }, // my DMs / groups / joined channels
+            { members: { some: { userId: me.id } }, ...(isGuest(me.role) ? { type: 'CHANNEL' as const, space: spaceFilter } : {}) }, // my DMs / groups / joined channels (guests: only inside their spaces)
             ...(admin ? [{ type: 'CHANNEL' as const }] : []), // admins: every channel
           ],
         },

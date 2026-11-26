@@ -24,6 +24,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const owners = await db.spaceMember.count({ where: { spaceId: id, role: 'OWNER' } })
     if (owners <= 1) return badRequest('A space needs at least one owner.')
   }
+  const tu = await db.user.findUnique({ where: { id: userId }, select: { role: true } })
+  if (tu?.role === 'GUEST' && role !== 'MEMBER') return badRequest('Guests can only be regular members.')
   await db.spaceMember.update({ where: { id: target.id }, data: { role } })
   return json({ ok: true })
 }

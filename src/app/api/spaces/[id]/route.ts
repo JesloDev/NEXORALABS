@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json, badRequest, forbidden, notFound, getClientInfo } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
-import { spaceAccess, isOrgAdmin } from '@/lib/access'
+import { spaceAccess, isOrgAdmin, isGuest } from '@/lib/access'
 import { logActivity } from '@/lib/activity'
 
 export const dynamic = 'force-dynamic'
@@ -55,7 +55,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     access,
     channels: channelsOut,
     pages,
-    members: members.map((m) => ({ ...m.user, spaceRole: m.role, orgRole: m.user.role, joinedAt: m.joinedAt })),
+    members: members.map((m) => {
+      // guests only see names: no emails or job titles of anyone else
+      const hide = isGuest(me.role) && m.user.id !== me.id
+      return { ...m.user, email: hide ? '' : m.user.email, title: hide ? null : m.user.title, spaceRole: m.role, orgRole: m.user.role, joinedAt: m.joinedAt }
+    }),
   })
 }
 

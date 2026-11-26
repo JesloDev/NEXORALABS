@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
-import { json, badRequest } from '@/lib/api-helpers'
+import { json, badRequest, forbidden } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
   const me = await getActiveSessionUser()
   if (!me) return json({ error: 'Unauthorized' }, 401)
 
+  if (me.role === 'GUEST') return forbidden('Guests can only message inside their spaces.')
   let body: any
   try {
     body = await req.json()
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
   if (type === 'GROUP') {
     if (!name || name.length < 2) return badRequest('Please provide a group name.')
     // all members must be active users
-    const users = await db.user.findMany({ where: { id: { in: memberIds }, status: 'ACTIVE', emailVerified: { not: null } }, select: { id: true } })
+    const users = await db.user.findMany({ where: { id: { in: memberIds }, status: 'ACTIVE', role: { not: 'GUEST' }, emailVerified: { not: null } }, select: { id: true } })
     const validIds = new Set(users.map((u) => u.id))
     const allMembers = Array.from(new Set([me.id, ...memberIds.filter((id) => validIds.has(id))]))
 
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
     const otherId = (body?.userId || '').trim()
     if (!otherId) return badRequest('Select a user to chat with.')
     if (otherId === me.id) return badRequest("You can't start a direct chat with yourself.")
-    const other = await db.user.findFirst({ where: { id: otherId, status: 'ACTIVE', emailVerified: { not: null } } })
+    const other = await db.user.findFirst({ where: { id: otherId, status: 'ACTIVE', role: { not: 'GUEST' }, emailVerified: { not: null } } })
     if (!other) return badRequest('User is not available.')
 
     // find existing direct chat with exactly these two members

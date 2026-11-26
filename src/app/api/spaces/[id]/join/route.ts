@@ -14,6 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   const acc = await spaceAccess(me, id)
   if (!acc) return notFound('Space not found.')
+  if (me.role === 'GUEST') return forbidden('Join a space with its invite link.')
   if (acc.member) return json({ ok: true, already: true })
   if (!acc.canJoin) return forbidden('This space is invite-only.')
 

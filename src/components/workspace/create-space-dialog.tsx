@@ -16,7 +16,7 @@ export function CreateSpaceDialog({ open, onOpenChange, onCreated }: { open: boo
   const [description, setDescription] = useState('')
   const [icon, setIcon] = useState('')
   const [color, setColor] = useState(SPACE_COLORS[0])
-  const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PUBLIC')
+  const [visibility, setVisibility] = useState<'PUBLIC' | 'PRIVATE'>('PRIVATE')
   const [busy, setBusy] = useState(false)
 
   const submit = async () => {

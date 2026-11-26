@@ -12,7 +12,7 @@ export interface ChannelSummary {
 export interface PageNode { id: string; parentId: string | null; title: string; icon?: string | null; position: number; updatedAt: string }
 export interface SpaceMemberRow {
   id: string; name: string; email: string; image?: string | null; title?: string | null
-  spaceRole: 'OWNER' | 'ADMIN' | 'MEMBER'; orgRole: 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE'
+  spaceRole: 'OWNER' | 'ADMIN' | 'MEMBER'; orgRole: 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'GUEST'
 }
 export interface SpaceDetail {
   space: { id: string; name: string; slug: string; description?: string | null; icon?: string | null; color?: string | null; visibility: 'PUBLIC' | 'PRIVATE'; archived: boolean }

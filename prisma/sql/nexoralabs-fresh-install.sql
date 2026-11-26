@@ -4,7 +4,7 @@
 -- Run each statement in order (or the whole file). Running it twice will error on CREATE TYPE and ADD CONSTRAINT.
 
 -- 1. Enums
-CREATE TYPE "nexora_role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'EMPLOYEE');
+CREATE TYPE "nexora_role" AS ENUM ('SUPER_ADMIN', 'ADMIN', 'EMPLOYEE', 'GUEST');
 CREATE TYPE "nexora_user_status" AS ENUM ('PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED');
 CREATE TYPE "nexora_waitlist_status" AS ENUM ('PENDING_VERIFICATION', 'CONFIRMED', 'CONTACTED');
 CREATE TYPE "nexora_chat_type" AS ENUM ('DIRECT', 'GROUP', 'CHANNEL');
@@ -272,3 +272,38 @@ ALTER TABLE "nexora_pages" ADD CONSTRAINT "nexora_pages_createdBy_fkey" FOREIGN 
 ALTER TABLE "nexora_pages" ADD CONSTRAINT "nexora_pages_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "nexora_users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "nexora_reactions" ADD CONSTRAINT "nexora_reactions_messageId_fkey" FOREIGN KEY ("messageId") REFERENCES "nexora_messages"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "nexora_reactions" ADD CONSTRAINT "nexora_reactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "nexora_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- Guest spaces: outside collaborators, per-space invite links, one-time auth tokens
+CREATE TYPE "nexora_auth_token_kind" AS ENUM ('SPACE_JOIN', 'GUEST_LOGIN');
+CREATE TABLE IF NOT EXISTS "nexora_space_invites" (
+    "id" TEXT NOT NULL,
+    "spaceId" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "label" TEXT,
+    "maxUses" INTEGER,
+    "currentUses" INTEGER NOT NULL DEFAULT 0,
+    "expiresAt" TIMESTAMP(3),
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "nexora_space_invites_pkey" PRIMARY KEY ("id")
+);
+CREATE TABLE IF NOT EXISTS "nexora_auth_tokens" (
+    "id" TEXT NOT NULL,
+    "tokenHash" TEXT NOT NULL,
+    "kind" "nexora_auth_token_kind" NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT,
+    "spaceId" TEXT,
+    "inviteId" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "usedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "nexora_auth_tokens_pkey" PRIMARY KEY ("id")
+);
+CREATE UNIQUE INDEX IF NOT EXISTS "nexora_space_invites_token_key" ON "nexora_space_invites"("token");
+CREATE INDEX IF NOT EXISTS "nexora_space_invites_spaceId_idx" ON "nexora_space_invites"("spaceId");
+CREATE UNIQUE INDEX IF NOT EXISTS "nexora_auth_tokens_tokenHash_key" ON "nexora_auth_tokens"("tokenHash");
+CREATE INDEX IF NOT EXISTS "nexora_auth_tokens_email_kind_createdAt_idx" ON "nexora_auth_tokens"("email", "kind", "createdAt");
+ALTER TABLE "nexora_space_invites" ADD CONSTRAINT "nexora_space_invites_spaceId_fkey" FOREIGN KEY ("spaceId") REFERENCES "nexora_spaces"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "nexora_space_invites" ADD CONSTRAINT "nexora_space_invites_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "nexora_users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

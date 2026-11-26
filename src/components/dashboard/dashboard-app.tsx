@@ -47,7 +47,7 @@ export interface DashboardUser {
   id: string
   email: string
   name: string
-  role: 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE'
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'EMPLOYEE' | 'GUEST'
   status: string
   image?: string | null
   title?: string | null
@@ -65,6 +65,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   useEffect(() => setMounted(true), [])
   const dark = mounted && resolvedTheme === 'dark'
   const isAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'
+  const isGuest = user.role === 'GUEST' // outside collaborator: lives only inside the spaces they were invited to
 
   const [token, setToken] = useState<string | null>(null)
   const sock = useChatSocket(token)
@@ -131,6 +132,13 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
     window.addEventListener('nexora:notification', refresh)
     return () => { clearTimeout(timer); window.removeEventListener('nexora:chat-list-update', refresh); window.removeEventListener('nexora:notification', refresh) }
   }, [loadSpaces, loadDms, loadNotifs, loadDetail])
+
+  // guests have no Home: drop them straight into their first space
+  useEffect(() => {
+    if (!isGuest || ctx !== 'home') return
+    const first = spaces.find((s) => s.isMember)
+    if (first) setCtx(first.id)
+  }, [isGuest, ctx, spaces])
 
   // space context → load its detail
   useEffect(() => { if (ctx === 'home') setDetail(null); else loadDetail(ctx) }, [ctx, loadDetail])
@@ -283,7 +291,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
   // ───────── chrome ─────────
   const rail = (
     <SpaceRail
-      spaces={spaces} ctx={ctx} isAdmin={isAdmin} dark={dark} homeUnread={homeUnread}
+      spaces={spaces} ctx={ctx} isAdmin={isAdmin} isGuest={isGuest} dark={dark} homeUnread={homeUnread}
       notificationsActive={main.kind === 'notifications'} consoleActive={main.kind === 'console'} allSpacesActive={main.kind === 'all-spaces'} profileActive={main.kind === 'profile'}
       onProfile={() => go(ctx, { kind: 'profile' })}
       onHome={goHome} onSpace={goSpace} onAllSpaces={() => go(ctx, { kind: 'all-spaces' })} onCreateSpace={() => setNewSpaceOpen(true)}
@@ -352,7 +360,7 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
     content = <SpaceHome detail={detail} user={user} online={sock.online} onSelect={select} onChanged={() => { loadDetail(ctx); loadSpaces() }}
       onLeftOrDeleted={() => { loadSpaces(); goHome() }} onJoinSpace={joinSpace} onOpenSidebar={openSidebar} />
   } else if (main.kind === 'all-spaces') {
-    content = <AllSpaces spaces={spaces} isAdmin={isAdmin} onOpen={goSpace} onCreate={() => setNewSpaceOpen(true)} onOpenSidebar={openSidebar} />
+    content = <AllSpaces spaces={spaces} isAdmin={isAdmin} canCreate={!isGuest} onOpen={goSpace} onCreate={() => setNewSpaceOpen(true)} onOpenSidebar={openSidebar} />
   } else if (main.kind === 'console') {
     content = <SimplePane title="Admin console" onMenu={openSidebar} scroll={false}><AdminConsole user={user} /></SimplePane>
   } else if (main.kind === 'notifications') {
@@ -361,7 +369,9 @@ export function DashboardApp({ user }: { user: DashboardUser }) {
     content = <SimplePane title="Profile" onMenu={openSidebar}><ProfileView user={user as any} /></SimplePane>
   } else {
     content = ctx === 'home'
-      ? <Empty title={`Welcome, ${user.name.split(' ')[0]}`} body="Pick a conversation, start a new one, or open a space from the left rail." action={<Button onClick={() => setNewChatOpen(true)}><MessageSquarePlus className="size-4 mr-2" />New message</Button>} onOpenSidebar={openSidebar} />
+      ? (isGuest
+        ? <Empty title={`Welcome, ${user.name.split(' ')[0]}`} body="You aren't in a space yet. Open the invite link you were sent to join one." onOpenSidebar={openSidebar} />
+        : <Empty title={`Welcome, ${user.name.split(' ')[0]}`} body="Pick a conversation, start a new one, or open a space from the left rail." action={<Button onClick={() => setNewChatOpen(true)}><MessageSquarePlus className="size-4 mr-2" />New message</Button>} onOpenSidebar={openSidebar} />)
       : <Empty title="Pick something from the sidebar" body="Open a channel or a page." onOpenSidebar={openSidebar} />
   }
 

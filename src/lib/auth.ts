@@ -4,6 +4,7 @@ import { db } from '@/lib/db'
 import { verifyPassword } from '@/lib/password'
 import { logActivity } from '@/lib/activity'
 import { sendEmail, emailShell, baseUrl } from '@/lib/email'
+import { consumeToken } from '@/lib/guest-tokens'
 
 async function sendLoginNotification(userId: string, email: string, name: string) {
   const now = new Date().toLocaleString('en-US', { timeZone: 'UTC' })
@@ -109,6 +110,20 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           status: user.status,
         }
+      },
+    }),
+    // Outside collaborators sign in with a one-time emailed link (no password).
+    CredentialsProvider({
+      id: 'guest-link',
+      name: 'Space guest link',
+      credentials: { token: { label: 'Token', type: 'text' } },
+      async authorize(credentials) {
+        const row = await consumeToken(credentials?.token || '', 'GUEST_LOGIN')
+        if (!row) return null
+        const user = await db.user.findUnique({ where: { email: row.email } })
+        if (!user || user.role !== 'GUEST' || user.status !== 'ACTIVE' || !user.emailVerified) return null
+        await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } }).catch(() => {})
+        return { id: user.id, email: user.email, name: user.name, role: user.role, status: user.status }
       },
     }),
   ],

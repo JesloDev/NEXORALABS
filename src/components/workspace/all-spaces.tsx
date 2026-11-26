@@ -10,8 +10,8 @@ import type { SpaceSummary } from './types'
 
 // Org-admin directory of EVERY space (including private ones they aren't in).
 // Non-admins get the same view limited to spaces they can see ("Browse spaces").
-export function AllSpaces({ spaces, isAdmin, onOpen, onCreate, onOpenSidebar }: {
-  spaces: SpaceSummary[]; isAdmin: boolean; onOpen: (id: string) => void; onCreate: () => void; onOpenSidebar: () => void
+export function AllSpaces({ spaces, isAdmin, canCreate = true, onOpen, onCreate, onOpenSidebar }: {
+  spaces: SpaceSummary[]; isAdmin: boolean; canCreate?: boolean; onOpen: (id: string) => void; onCreate: () => void; onOpenSidebar: () => void
 }) {
   const [q, setQ] = useState('')
   const [filter, setFilter] = useState<'all' | 'mine' | 'other' | 'private'>('all')
@@ -30,7 +30,7 @@ export function AllSpaces({ spaces, isAdmin, onOpen, onCreate, onOpenSidebar }: 
         <h2 className="font-bold">{isAdmin ? 'All spaces' : 'Browse spaces'}</h2>
         {isAdmin && <Badge variant="outline" className="gap-1 text-[10px]"><ShieldCheck className="size-3" />Admin</Badge>}
         <div className="flex-1" />
-        {isAdmin && <Button size="sm" onClick={onCreate} className="gap-1.5"><Plus className="size-4" />New space</Button>}
+        {canCreate && <Button size="sm" onClick={onCreate} className="gap-1.5"><Plus className="size-4" />New space</Button>}
       </header>
       <div className="max-w-5xl mx-auto p-5 sm:p-8 space-y-4">
         <p className="text-sm text-muted-foreground">

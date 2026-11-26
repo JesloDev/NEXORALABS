@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json, badRequest, forbidden, getClientInfo } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
-import { isOrgAdmin, slugify } from '@/lib/access'
+import { isOrgAdmin, isGuest, slugify } from '@/lib/access'
 import { logActivity } from '@/lib/activity'
 
 export const dynamic = 'force-dynamic'
@@ -18,7 +18,9 @@ export async function GET() {
   const spaces = await db.space.findMany({
     where: admin
       ? {}
-      : { OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId: me.id } } }] },
+      : isGuest(me.role)
+        ? { members: { some: { userId: me.id } } }
+        : { OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId: me.id } } }] },
     orderBy: { createdAt: 'asc' },
     include: {
       members: { where: { userId: me.id }, select: { role: true } },
@@ -54,11 +56,11 @@ export async function GET() {
   })
 }
 
-// Only org admins create spaces (company/team partitions).
+// Employees and admins create spaces; guests cannot.
 export async function POST(req: NextRequest) {
   const me = await getActiveSessionUser()
   if (!me) return json({ error: 'Unauthorized' }, 401)
-  if (!isOrgAdmin(me.role)) return forbidden('Only admins can create spaces.')
+  if (isGuest(me.role)) return forbidden('Guests cannot create spaces.')
   let body: any
   try { body = await req.json() } catch { return badRequest('Invalid body') }
 
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
   if (await db.space.findUnique({ where: { slug } })) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`
 
   const users = memberIds.length
-    ? await db.user.findMany({ where: { id: { in: memberIds }, status: 'ACTIVE', emailVerified: { not: null } }, select: { id: true } })
+    ? await db.user.findMany({ where: { id: { in: memberIds }, status: 'ACTIVE', role: { not: 'GUEST' }, emailVerified: { not: null } }, select: { id: true } })
     : []
   const others = users.map((u) => u.id).filter((id) => id !== me.id)
 

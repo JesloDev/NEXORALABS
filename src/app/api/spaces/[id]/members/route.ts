@@ -19,7 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const role = body?.role === 'ADMIN' ? 'ADMIN' : 'MEMBER'
   if (!userIds.length) return badRequest('Select at least one person.')
 
-  const users = await db.user.findMany({ where: { id: { in: userIds }, status: 'ACTIVE', emailVerified: { not: null } }, select: { id: true } })
+  const users = await db.user.findMany({ where: { id: { in: userIds }, status: 'ACTIVE', role: { not: 'GUEST' }, emailVerified: { not: null } }, select: { id: true, role: true } })
   const existing = new Set((await db.spaceMember.findMany({ where: { spaceId: id, userId: { in: users.map((u) => u.id) } }, select: { userId: true } })).map((m) => m.userId))
   const toAdd = users.map((u) => u.id).filter((u) => !existing.has(u))
   if (toAdd.length) {

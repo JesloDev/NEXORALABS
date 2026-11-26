@@ -23,6 +23,7 @@ enum Role {
   SUPER_ADMIN
   ADMIN
   EMPLOYEE
+  GUEST // outside collaborator: lives only inside the spaces they were invited to
   @@map("nexora_role")
 }
 
@@ -87,6 +88,7 @@ model User {
   comments       Comment[]      @relation("CommentCreator")
   spaces        SpaceMember[]
   createdSpaces Space[]        @relation("SpaceCreator")
+  createdSpaceInvites SpaceInvite[] @relation("SpaceInviteCreator")
   reactions     Reaction[]
   pagesCreated  Page[]         @relation("PageCreator")
   pagesUpdated  Page[]         @relation("PageUpdater")
@@ -385,9 +387,54 @@ model Space {
   members  SpaceMember[]
   channels Chat[]
   pages    Page[]
+  invites  SpaceInvite[]
 
   @@index([visibility])
   @@map("nexora_spaces")
+}
+
+// Shareable link that onboards an outside person into ONE space (name + verified email only).
+model SpaceInvite {
+  id          String    @id @default(cuid())
+  spaceId     String
+  token       String    @unique
+  label       String?
+  maxUses     Int? // null = unlimited
+  currentUses Int       @default(0)
+  expiresAt   DateTime? // null = never
+  active      Boolean   @default(true)
+  createdBy   String
+  createdAt   DateTime  @default(now())
+
+  space   Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  creator User  @relation("SpaceInviteCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@index([spaceId])
+  @@map("nexora_space_invites")
+}
+
+enum AuthTokenKind {
+  SPACE_JOIN // emailed link that proves the email address and finishes joining a space
+  GUEST_LOGIN // short-lived one-time sign-in token for guests (no password)
+
+  @@map("nexora_auth_token_kind")
+}
+
+// One-time tokens (only the SHA-256 hash is stored).
+model AuthToken {
+  id        String        @id @default(cuid())
+  tokenHash String        @unique
+  kind      AuthTokenKind
+  email     String
+  name      String?
+  spaceId   String?
+  inviteId  String?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([email, kind, createdAt])
+  @@map("nexora_auth_tokens")
 }
 
 model SpaceMember {

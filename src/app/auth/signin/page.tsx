@@ -131,6 +131,10 @@ function SignInForm() {
                 </div>
               </CardContent>
             </Card>
+            <p className="mt-4 text-center text-sm text-muted-foreground">
+              Joined a space as a guest?{' '}
+              <Link href="/auth/guest-signin" className="font-semibold text-primary hover:underline">Get a sign-in link</Link>
+            </p>
             <p className="mt-6 text-center text-xs text-muted-foreground">
               Access is invite-based and admin-approved. Contact your administrator if you need an invite link.
             </p>

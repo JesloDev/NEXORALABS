@@ -14,12 +14,15 @@ import { toast } from 'sonner'
 import type { DashboardUser } from '@/components/dashboard/dashboard-app'
 import { api, initials, type Main, type SpaceDetail } from './types'
 import { SpaceTile } from './space-tile'
+import { SpaceInvites } from './space-invites'
+import { useDialogs } from '@/components/dashboard/use-dialogs'
 
 export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrDeleted, onJoinSpace, onOpenSidebar }: {
   detail: SpaceDetail; user: DashboardUser; online: Set<string>
   onSelect: (m: Main) => void; onChanged: () => void; onLeftOrDeleted: () => void; onJoinSpace: () => void; onOpenSidebar: () => void
 }) {
   const { space, access, channels, pages, members } = detail
+  const { confirm, prompt, dialogs } = useDialogs()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<any[]>([])
   const [name, setName] = useState(space.name)
@@ -43,7 +46,7 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
     r.ok ? onChanged() : toast.error(r.error)
   }
   const remove = async (userId: string, self = false) => {
-    if (!confirm(self ? 'Leave this space?' : 'Remove this member from the space?')) return
+    if (!(await confirm({ title: self ? 'Leave this space?' : 'Remove this member?', message: self ? undefined : 'They lose access to this space.', confirmLabel: self ? 'Leave' : 'Remove', destructive: true }))) return
     const r = await api(`/api/spaces/${space.id}/members/${userId}`, { method: 'DELETE' })
     if (!r.ok) return toast.error(r.error)
     self ? onLeftOrDeleted() : onChanged()
@@ -53,8 +56,8 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
     r.ok ? (toast.success(okMsg), onChanged()) : toast.error(r.error)
   }
   const destroy = async () => {
-    if (!confirm(`Delete "${space.name}" with ALL its channels, messages and pages? This cannot be undone.`)) return
-    if (prompt(`Type the space name to confirm: ${space.name}`) !== space.name) return toast.error('Name did not match.')
+    if (!(await confirm({ title: `Delete "${space.name}"?`, message: 'This removes ALL its channels, messages and pages and cannot be undone.', confirmLabel: 'Continue', destructive: true }))) return
+    if ((await prompt({ title: 'Type the space name to confirm', message: space.name, placeholder: space.name, confirmLabel: 'Delete space' })) !== space.name) return toast.error('Name did not match.')
     const r = await api(`/api/spaces/${space.id}`, { method: 'DELETE' })
     r.ok ? (toast.success('Space deleted.'), onLeftOrDeleted()) : toast.error(r.error)
   }
@@ -63,6 +66,7 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
 
   return (
     <div className="h-full overflow-y-auto nexora-scroll">
+      {dialogs}
       <header className="h-14 border-b border-border flex items-center gap-2 px-3 sm:px-5 sticky top-0 bg-background z-10">
         <Button variant="ghost" size="icon" className="md:hidden -ml-1" onClick={onOpenSidebar} aria-label="Open menu"><Menu className="size-5" /></Button>
         <h2 className="font-bold">{space.name}</h2>
@@ -112,7 +116,7 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
           <TabsContent value="members" className="mt-4 space-y-3">
             {access.canManage && (
               <div className="rounded-xl border border-border p-3 space-y-2">
-                <Input value={q} onChange={(e) => search(e.target.value)} placeholder="Add people to this space…" aria-label="Search people to add" />
+                <Input value={q} onChange={(e) => search(e.target.value)} placeholder="Add a NEXORALABS teammate…" aria-label="Search people to add" />
                 {results.map((u) => (
                   <div key={u.id} className="flex items-center gap-3 p-1.5 rounded-lg hover:bg-muted">
                     <Avatar className="size-8"><AvatarFallback className="text-xs">{initials(u.name)}</AvatarFallback></Avatar>
@@ -122,6 +126,7 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
                 ))}
               </div>
             )}
+            {access.canManage && !space.archived && <SpaceInvites spaceId={space.id} spaceName={space.name} />}
             <div className="rounded-xl border border-border divide-y divide-border">
               {members.map((m) => (
                 <div key={m.id} className="flex items-center gap-3 p-3">
@@ -131,14 +136,15 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium truncate">{m.name}{m.id === user.id && <span className="text-muted-foreground"> (you)</span>}</div>
-                    <div className="text-xs text-muted-foreground truncate">{m.title || m.email}</div>
+                    <div className="text-xs text-muted-foreground truncate">{m.title || m.email || ''}</div>
                   </div>
-                  {access.canManage ? (
+                  {m.orgRole === 'GUEST' && <Badge variant="outline" className="text-[10px]">Guest</Badge>}
+                  {access.canManage && m.orgRole !== 'GUEST' ? (
                     <Select value={m.spaceRole} onValueChange={(v) => setRole(m.id, v)}>
                       <SelectTrigger className="w-28 h-8" aria-label={`Role for ${m.name}`}><SelectValue /></SelectTrigger>
                       <SelectContent><SelectItem value="OWNER">Owner</SelectItem><SelectItem value="ADMIN">Admin</SelectItem><SelectItem value="MEMBER">Member</SelectItem></SelectContent>
                     </Select>
-                  ) : <Badge variant="secondary">{m.spaceRole.toLowerCase()}</Badge>}
+                  ) : m.orgRole !== 'GUEST' && <Badge variant="secondary">{m.spaceRole.toLowerCase()}</Badge>}
                   {(access.canManage && m.id !== user.id) && <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(m.id)} aria-label={`Remove ${m.name}`}><Trash2 className="size-4" /></Button>}
                 </div>
               ))}
