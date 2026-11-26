@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json, badRequest, forbidden, notFound } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
-import { spaceAccess } from '@/lib/access'
+import { spaceAccess, isOrgAdmin } from '@/lib/access'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +17,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try { body = await req.json() } catch { return badRequest('Invalid body') }
   const role = ['OWNER', 'ADMIN', 'MEMBER'].includes(body?.role) ? body.role : null
   if (!role) return badRequest('Invalid role.')
-  if (role === 'OWNER' && acc.member?.role !== 'OWNER' && !acc.viaAdmin && me.role === 'EMPLOYEE') return forbidden('Only an owner can assign owners.')
+  // Only a space owner (or a company admin) may hand out ownership or touch an owner's role.
+  const mayTouchOwners = acc.member?.role === 'OWNER' || isOrgAdmin(me.role)
+  if (role === 'OWNER' && !mayTouchOwners) return forbidden('Only an owner can assign owners.')
   const target = await db.spaceMember.findUnique({ where: { spaceId_userId: { spaceId: id, userId } } })
   if (!target) return notFound('Member not found.')
+  if (target.role === 'OWNER' && !mayTouchOwners) return forbidden("Only an owner can change an owner's role.")
   if (target.role === 'OWNER' && role !== 'OWNER') {
     const owners = await db.spaceMember.count({ where: { spaceId: id, role: 'OWNER' } })
     if (owners <= 1) return badRequest('A space needs at least one owner.')
@@ -41,6 +44,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!isSelf && !acc.canManage) return forbidden('You cannot remove this member.')
   const target = await db.spaceMember.findUnique({ where: { spaceId_userId: { spaceId: id, userId } } })
   if (!target) return notFound('Member not found.')
+  if (!isSelf && target.role === 'OWNER' && acc.member?.role !== 'OWNER' && !isOrgAdmin(me.role)) return forbidden('Only an owner can remove an owner.')
   if (target.role === 'OWNER') {
     const owners = await db.spaceMember.count({ where: { spaceId: id, role: 'OWNER' } })
     if (owners <= 1) return badRequest('Transfer ownership before removing the last owner.')

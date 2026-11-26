@@ -28,6 +28,7 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
   const [name, setName] = useState(space.name)
   const [desc, setDesc] = useState(space.description || '')
   const isOrgAdmin = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN'
+  const mayTouchOwners = access.role === 'OWNER' || isOrgAdmin
   const memberIds = new Set(members.map((m) => m.id))
 
   const search = async (v: string) => {
@@ -139,13 +140,13 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
                     <div className="text-xs text-muted-foreground truncate">{m.title || m.email || ''}</div>
                   </div>
                   {m.orgRole === 'GUEST' && <Badge variant="outline" className="text-[10px]">Guest</Badge>}
-                  {access.canManage && m.orgRole !== 'GUEST' ? (
+                  {access.canManage && m.orgRole !== 'GUEST' && (m.spaceRole !== 'OWNER' || mayTouchOwners) ? (
                     <Select value={m.spaceRole} onValueChange={(v) => setRole(m.id, v)}>
                       <SelectTrigger className="w-28 h-8" aria-label={`Role for ${m.name}`}><SelectValue /></SelectTrigger>
-                      <SelectContent><SelectItem value="OWNER">Owner</SelectItem><SelectItem value="ADMIN">Admin</SelectItem><SelectItem value="MEMBER">Member</SelectItem></SelectContent>
+                      <SelectContent>{mayTouchOwners && <SelectItem value="OWNER">Owner</SelectItem>}<SelectItem value="ADMIN">Admin</SelectItem><SelectItem value="MEMBER">Member</SelectItem></SelectContent>
                     </Select>
                   ) : m.orgRole !== 'GUEST' && <Badge variant="secondary">{m.spaceRole.toLowerCase()}</Badge>}
-                  {(access.canManage && m.id !== user.id) && <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(m.id)} aria-label={`Remove ${m.name}`}><Trash2 className="size-4" /></Button>}
+                  {(access.canManage && m.id !== user.id && (m.spaceRole !== 'OWNER' || mayTouchOwners)) && <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => remove(m.id)} aria-label={`Remove ${m.name}`}><Trash2 className="size-4" /></Button>}
                 </div>
               ))}
             </div>
