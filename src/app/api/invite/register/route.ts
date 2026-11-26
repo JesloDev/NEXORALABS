@@ -40,10 +40,24 @@ export async function POST(req: NextRequest) {
   if (existing && existing.emailVerified) {
     return badRequest('An account with this email already exists. Please sign in.')
   }
+  // Claim one use atomically so parallel sign-ups can't exceed maxUses. Retrying the same link with the
+  // same unverified email reuses that person's earlier slot instead of burning another.
+  const alreadyCounted = !!existing && existing.inviteLinkId === invite.id
+  let claimed = false
+  if (!alreadyCounted) {
+    const res = await db.inviteLink.updateMany({
+      where: { id: invite.id, active: true, expiresAt: { gt: now }, currentUses: { lt: invite.maxUses } },
+      data: { currentUses: { increment: 1 } },
+    })
+    if (res.count !== 1) return badRequest('This invite link has reached its maximum uses.')
+    claimed = true
+  }
   // Hanging unverified record → overwrite it so they can complete registration.
   const passwordHash = await hashPassword(password)
   const verifyToken = genToken()
   const verifyExpiry = new Date(Date.now() + 1000 * 60 * 60 * 24)
+
+  try {
 
   if (existing && !existing.emailVerified) {
     // reuse id, clear hanging state
@@ -70,6 +84,11 @@ export async function POST(req: NextRequest) {
         inviteLinkId: invite.id,
       },
     })
+  }
+
+  } catch (e) {
+    if (claimed) await db.inviteLink.updateMany({ where: { id: invite.id, currentUses: { gt: 0 } }, data: { currentUses: { decrement: 1 } } }).catch(() => {})
+    throw e
   }
 
   const verifyUrl = `${baseUrl}/auth/verify-email?token=${verifyToken}`
