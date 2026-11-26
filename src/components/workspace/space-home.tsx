@@ -15,6 +15,7 @@ import type { DashboardUser } from '@/components/dashboard/dashboard-app'
 import { api, initials, type Main, type SpaceDetail } from './types'
 import { SpaceTile } from './space-tile'
 import { SpaceInvites } from './space-invites'
+import { FeedbackConsole } from './feedback-console'
 import { useDialogs } from '@/components/dashboard/use-dialogs'
 
 export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrDeleted, onJoinSpace, onOpenSidebar }: {
@@ -71,7 +72,6 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
       <header className="h-14 border-b border-border flex items-center gap-2 px-3 sm:px-5 sticky top-0 bg-background z-10">
         <Button variant="ghost" size="icon" className="md:hidden -ml-1" onClick={onOpenSidebar} aria-label="Open menu"><Menu className="size-5" /></Button>
         <h2 className="font-bold">{space.name}</h2>
-        {access.viaAdmin && <Badge variant="outline" className="gap-1 text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400"><ShieldCheck className="size-3" />Admin view</Badge>}
         {space.archived && <Badge variant="secondary">Archived</Badge>}
       </header>
 
@@ -82,13 +82,14 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
             <h1 className="text-2xl font-extrabold tracking-tight truncate">{space.name}</h1>
             <p className="text-sm text-muted-foreground">{space.description || 'No description yet.'}</p>
           </div>
-          {!access.isMember && access.canJoin && <Button className="ml-auto" onClick={onJoinSpace}>{access.viaAdmin ? 'Join as admin' : 'Join space'}</Button>}
+          {!access.isMember && access.canJoin && <Button className="ml-auto" onClick={onJoinSpace}>Join space</Button>}
         </div>
 
         <Tabs defaultValue="overview" className="mt-6">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="members">Members ({members.length})</TabsTrigger>
+            {access.canManage && <TabsTrigger value="feedback">Feedback</TabsTrigger>}
             {access.canManage && <TabsTrigger value="settings">Settings</TabsTrigger>}
           </TabsList>
 
@@ -154,6 +155,10 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
           </TabsContent>
 
           {access.canManage && (
+            <TabsContent value="feedback" className="mt-4"><FeedbackConsole spaceId={space.id} /></TabsContent>
+          )}
+
+          {access.canManage && (
             <TabsContent value="settings" className="mt-4 space-y-4 max-w-xl">
               <div className="space-y-1.5"><Label htmlFor="s-name">Name</Label><Input id="s-name" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} /></div>
               <div className="space-y-1.5"><Label htmlFor="s-desc">Description</Label><Textarea id="s-desc" value={desc} onChange={(e) => setDesc(e.target.value)} rows={3} /></div>
@@ -161,7 +166,7 @@ export function SpaceHome({ detail, user, online, onSelect, onChanged, onLeftOrD
               <div className="rounded-xl border border-border p-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div><div className="text-sm font-semibold">Visibility: {space.visibility === 'PUBLIC' ? 'Public' : 'Private'}</div>
-                    <div className="text-xs text-muted-foreground">{space.visibility === 'PUBLIC' ? 'Anyone can find and join.' : 'Invite only. Org admins can still open it.'}</div></div>
+                    <div className="text-xs text-muted-foreground">{space.visibility === 'PUBLIC' ? 'Anyone can find and join.' : 'Invite only.'}</div></div>
                   <Button variant="outline" size="sm" onClick={() => patch({ visibility: space.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC' }, 'Visibility updated.')}>Make {space.visibility === 'PUBLIC' ? 'private' : 'public'}</Button>
                 </div>
                 <div className="flex items-center justify-between gap-3">

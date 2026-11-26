@@ -47,7 +47,7 @@ export function CreateChannelDialog({ spaceId, open, onOpenChange, onCreated }: 
           <div className="flex items-center justify-between rounded-lg border border-border p-3">
             <div>
               <div className="text-sm font-medium">Make private</div>
-              <div className="text-xs text-muted-foreground">Only people you add (and org admins) can see it.</div>
+              <div className="text-xs text-muted-foreground">Only people you add can see it.</div>
             </div>
             <Switch checked={isPrivate} onCheckedChange={setIsPrivate} aria-label="Make channel private" />
           </div>

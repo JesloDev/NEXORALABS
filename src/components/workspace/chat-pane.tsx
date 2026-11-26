@@ -148,7 +148,6 @@ export function ChatPane({
             </div>
           </>
         )}
-        {chat.viaAdmin && <Badge variant="outline" className="ml-1 gap-1 text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400"><ShieldCheck className="size-3" />Admin view</Badge>}
         <div className="flex-1" />
         {(isChannel || isGroup) && (
           <Button variant="outline" size="sm" onClick={() => setMembersOpen(true)} className="gap-1.5 h-8" aria-label="Members">
@@ -189,7 +188,7 @@ export function ChatPane({
         ) : chat.canJoin ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/40 px-4 py-3 flex items-center gap-3">
             <div className="flex-1 text-sm">
-              {chat.viaAdmin ? <><ShieldCheck className="size-4 inline mr-1.5 text-primary" />You're viewing this channel as an admin. Join to post.</> : <>You're not in this channel yet.</>}
+              You're not in this channel yet.
             </div>
             <Button size="sm" onClick={join}>Join channel</Button>
           </div>

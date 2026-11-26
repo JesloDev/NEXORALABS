@@ -46,12 +46,11 @@ export function SpaceRail({
             <button key={s.id} onClick={() => onSpace(s.id)} title={s.name} aria-label={s.name} aria-current={active ? 'page' : undefined}
               className={cn('relative shrink-0 rounded-xl p-0.5 transition focus-visible:outline-2 focus-visible:outline-lime-400', active ? 'ring-2 ring-lime-400' : 'opacity-85 hover:opacity-100')}>
               <SpaceTile name={s.name} icon={s.icon} color={s.color} size={38} />
-              {s.viaAdmin && <span className="absolute -bottom-1 -right-1 size-4 rounded-full bg-amber-400 text-black flex items-center justify-center" aria-label="Admin view"><ShieldCheck className="size-2.5" /></span>}
               {s.unread > 0 && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-lime-400 text-[10px] font-bold text-black flex items-center justify-center">{s.unread > 99 ? '99+' : s.unread}</span>}
             </button>
           )
         })}
-        {!isGuest && <RailButton label={isAdmin ? 'All spaces (admin)' : 'Browse spaces'} active={allSpacesActive} onClick={onAllSpaces}><LayoutGrid className="size-5" /></RailButton>}
+        {!isGuest && <RailButton label="Browse spaces" active={allSpacesActive} onClick={onAllSpaces}><LayoutGrid className="size-5" /></RailButton>}
         {!isGuest && <RailButton label="Create a space" onClick={onCreateSpace}><Plus className="size-5" /></RailButton>}
       </div>
 

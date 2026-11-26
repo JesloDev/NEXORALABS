@@ -60,12 +60,7 @@ export function SpaceSidebar({ detail, main, onSelect, onCreateChannel, onCreate
             <div className="text-[11px] text-muted-foreground flex items-center gap-1">{space.visibility === 'PRIVATE' ? <><Lock className="size-3" />Private</> : 'Public'} · {detail.members.length} members</div>
           </div>
         </div>
-        {access.viaAdmin && (
-          <div className="mt-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 px-2.5 py-2 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
-            <ShieldCheck className="size-3.5 mt-0.5 shrink-0" /><span>Admin view — you're not a member of this space.</span>
-          </div>
-        )}
-        {!access.isMember && access.canJoin && <Button size="sm" className="w-full mt-2.5" onClick={onJoinSpace}>{access.viaAdmin ? 'Join as admin' : 'Join space'}</Button>}
+        {!access.isMember && access.canJoin && <Button size="sm" className="w-full mt-2.5" onClick={onJoinSpace}>Join space</Button>}
       </div>
 
       <div className="flex-1 overflow-y-auto nexora-scroll p-2 space-y-4">
@@ -85,7 +80,7 @@ export function SpaceSidebar({ detail, main, onSelect, onCreateChannel, onCreate
               <Row key={c.id} active={active} onClick={() => onSelect({ kind: 'chat', id: c.id })} className={cn(!c.isMember && 'opacity-70', c.unread > 0 && !active && 'text-foreground font-semibold')}>
                 {c.isPrivate ? <Lock className="size-4 shrink-0" /> : <Hash className="size-4 shrink-0" />}
                 <span className="truncate flex-1">{c.name}</span>
-                {!c.isMember && <span className="text-[10px] text-muted-foreground">{access.viaAdmin ? 'admin' : 'join'}</span>}
+                {!c.isMember && <span className="text-[10px] text-muted-foreground">join</span>}
                 {c.unread > 0 && <Badge className="h-4 min-w-4 px-1 text-[10px] rounded-full">{c.unread}</Badge>}
               </Row>
             )

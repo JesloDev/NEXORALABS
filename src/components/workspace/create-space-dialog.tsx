@@ -63,7 +63,7 @@ export function CreateSpaceDialog({ open, onOpenChange, onCreated }: { open: boo
               <button key={v} type="button" onClick={() => setVisibility(v)}
                 className={cn('rounded-lg border p-3 text-left transition', visibility === v ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted')}>
                 <div className="text-sm font-semibold">{v === 'PUBLIC' ? 'Public' : 'Private'}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{v === 'PUBLIC' ? 'Anyone at NEXORALABS can find and join.' : 'Invite only. Admins can still open it.'}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">{v === 'PUBLIC' ? 'Anyone at NEXORALABS can find and join.' : 'Invite only.'}</div>
               </button>
             ))}
           </div>

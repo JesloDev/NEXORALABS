@@ -27,14 +27,13 @@ export function AllSpaces({ spaces, isAdmin, canCreate = true, onOpen, onCreate,
     <div className="h-full overflow-y-auto nexora-scroll">
       <header className="h-14 border-b border-border flex items-center gap-2 px-3 sm:px-5 sticky top-0 bg-background z-10">
         <Button variant="ghost" size="icon" className="md:hidden -ml-1" onClick={onOpenSidebar} aria-label="Open menu"><Menu className="size-5" /></Button>
-        <h2 className="font-bold">{isAdmin ? 'All spaces' : 'Browse spaces'}</h2>
-        {isAdmin && <Badge variant="outline" className="gap-1 text-[10px]"><ShieldCheck className="size-3" />Admin</Badge>}
+        <h2 className="font-bold">Browse spaces</h2>
         <div className="flex-1" />
         {canCreate && <Button size="sm" onClick={onCreate} className="gap-1.5"><Plus className="size-4" />New space</Button>}
       </header>
       <div className="max-w-5xl mx-auto p-5 sm:p-8 space-y-4">
         <p className="text-sm text-muted-foreground">
-          {isAdmin ? `Every space in NEXORALABS (${spaces.length}). Open any of them — including private spaces you haven't joined.` : 'Public spaces you can join, and the ones you belong to.'}
+          Spaces you can join, and the ones you belong to.
         </p>
         <div className="flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-48">
@@ -64,7 +63,6 @@ export function AllSpaces({ spaces, isAdmin, canCreate = true, onOpen, onCreate,
                   <span className="flex items-center gap-1"><FileText className="size-3" />{s.pageCount}</span>
                   <span className="flex-1" />
                   {s.isMember ? <Badge variant="secondary" className="text-[10px]">{s.role?.toLowerCase()}</Badge>
-                    : s.viaAdmin ? <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400">not a member</Badge>
                     : <Badge variant="outline" className="text-[10px]">join</Badge>}
                 </div>
               </div>

@@ -89,6 +89,7 @@ model User {
   spaces        SpaceMember[]
   createdSpaces Space[]        @relation("SpaceCreator")
   createdSpaceInvites SpaceInvite[] @relation("SpaceInviteCreator")
+  createdForms FeedbackForm[] @relation("FormCreator")
   reactions     Reaction[]
   pagesCreated  Page[]         @relation("PageCreator")
   pagesUpdated  Page[]         @relation("PageUpdater")
@@ -388,6 +389,7 @@ model Space {
   channels Chat[]
   pages    Page[]
   invites  SpaceInvite[]
+  forms    FeedbackForm[]
 
   @@index([visibility])
   @@map("nexora_spaces")
@@ -491,4 +493,37 @@ model Reaction {
   @@unique([messageId, userId, emoji])
   @@index([messageId])
   @@map("nexora_reactions")
+}
+
+// ───────────────────────── Feedback forms ─────────────────────────
+// Space managers build forms (like Google Forms) and share a public link; anyone with the link can answer.
+model FeedbackForm {
+  id          String   @id @default(cuid())
+  spaceId     String
+  space       Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  token       String   @unique // public link id
+  title       String
+  description String?
+  questions   String   @default("[]") // JSON array of { id, type, label, required, options? }
+  open        Boolean  @default(true)
+  createdBy   String
+  creator     User     @relation("FormCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  responses   FeedbackResponse[]
+
+  @@index([spaceId])
+  @@map("nexora_feedback_forms")
+}
+
+model FeedbackResponse {
+  id        String       @id @default(cuid())
+  formId    String
+  form      FeedbackForm @relation(fields: [formId], references: [id], onDelete: Cascade)
+  answers   String // JSON object { [questionId]: string | string[] | number }
+  createdAt DateTime     @default(now())
+
+  @@index([formId, createdAt])
+  @@map("nexora_feedback_responses")
 }
