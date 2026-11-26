@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json, badRequest, forbidden } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
+import { unreadByChat } from '@/lib/unread'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,7 @@ export async function GET() {
   })
   const mine = new Map(memberRecords.map((m) => [m.chatId, m]))
 
+  const unreadMap = await unreadByChat(me.id)
   const chats = await db.chat.findMany({
     where: { type: { in: ['DIRECT', 'GROUP'] }, id: { in: [...mine.keys()] } },
     orderBy: { updatedAt: 'desc' },
@@ -25,12 +27,10 @@ export async function GET() {
     },
   })
 
-  const result = await Promise.all(chats.map(async (c) => {
+  const result = chats.map((c) => {
     const m = mine.get(c.id)
     const last = c.messages[0]
-    const unread = m
-      ? await db.message.count({ where: { chatId: c.id, parentId: null, deletedAt: null, senderId: { not: me.id }, createdAt: { gt: m.lastReadAt ?? m.joinedAt } } })
-      : 0
+    const unread = m ? unreadMap.get(c.id) ?? 0 : 0
     return {
       id: c.id, type: c.type, name: c.name, description: c.description, avatar: c.avatar,
       createdAt: c.createdAt, updatedAt: c.updatedAt,
@@ -39,7 +39,7 @@ export async function GET() {
       lastMessage: last ? { id: last.id, content: last.content, createdAt: last.createdAt, sender: last.sender } : null,
       unread,
     }
-  }))
+  })
 
   return json({ chats: result })
 }

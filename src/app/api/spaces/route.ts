@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json, badRequest, forbidden, getClientInfo } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
+import { unreadByChat } from '@/lib/unread'
 import { isOrgAdmin, isGuest, slugify } from '@/lib/access'
 import { logActivity } from '@/lib/activity'
 
@@ -28,20 +29,16 @@ export async function GET() {
     },
   })
 
-  // unread per space (member channels only)
-  const myChannelMemberships = await db.chatMember.findMany({
-    where: { userId: me.id, chat: { type: 'CHANNEL' } },
-    select: { chatId: true, lastReadAt: true, joinedAt: true, chat: { select: { spaceId: true } } },
-  })
+  // unread per space (member channels only): one query for all chats, then summed per space
+  const [unreadMap, channelSpace] = await Promise.all([
+    unreadByChat(me.id),
+    db.chatMember.findMany({ where: { userId: me.id, chat: { type: 'CHANNEL' } }, select: { chatId: true, chat: { select: { spaceId: true } } } }),
+  ])
   const unreadBySpace = new Map<string, number>()
-  await Promise.all(
-    myChannelMemberships.map(async (m) => {
-      const n = await db.message.count({
-        where: { chatId: m.chatId, parentId: null, deletedAt: null, senderId: { not: me.id }, createdAt: { gt: m.lastReadAt ?? m.joinedAt } },
-      })
-      if (n && m.chat.spaceId) unreadBySpace.set(m.chat.spaceId, (unreadBySpace.get(m.chat.spaceId) ?? 0) + n)
-    }),
-  )
+  for (const m of channelSpace) {
+    const n = unreadMap.get(m.chatId) ?? 0
+    if (n && m.chat.spaceId) unreadBySpace.set(m.chat.spaceId, (unreadBySpace.get(m.chat.spaceId) ?? 0) + n)
+  }
 
   return json({
     spaces: spaces.map((s) => ({

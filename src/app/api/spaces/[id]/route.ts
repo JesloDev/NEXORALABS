@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { db } from '@/lib/db'
 import { json, badRequest, forbidden, notFound, getClientInfo } from '@/lib/api-helpers'
 import { getActiveSessionUser } from '@/lib/session'
+import { unreadByChat } from '@/lib/unread'
 import { spaceAccess, isOrgAdmin, isGuest } from '@/lib/access'
 import { logActivity } from '@/lib/activity'
 
@@ -40,15 +41,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     db.chatMember.findMany({ where: { userId: me.id, chat: { spaceId: id } }, select: { chatId: true, lastReadAt: true, joinedAt: true } }),
   ])
   const mine = new Map(myMemberships.map((m) => [m.chatId, m]))
-  const channelsOut = await Promise.all(
-    channels.map(async (c) => {
-      const m = mine.get(c.id)
-      const unread = m
-        ? await db.message.count({ where: { chatId: c.id, parentId: null, deletedAt: null, senderId: { not: me.id }, createdAt: { gt: m.lastReadAt ?? m.joinedAt } } })
-        : 0
-      return { id: c.id, name: c.name, topic: c.topic, description: c.description, isPrivate: c.isPrivate, isMember: !!m, memberCount: c._count.members, unread }
-    }),
-  )
+  const unreadMap = await unreadByChat(me.id)
+  const channelsOut = channels.map((c) => {
+    const m = mine.get(c.id)
+    return { id: c.id, name: c.name, topic: c.topic, description: c.description, isPrivate: c.isPrivate, isMember: !!m, memberCount: c._count.members, unread: m ? unreadMap.get(c.id) ?? 0 : 0 }
+  })
 
   return json({
     space: base,
