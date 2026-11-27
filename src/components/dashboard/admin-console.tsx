@@ -1,5 +1,6 @@
 'use client'
 
+import { browserOrigin } from '@/lib/site-url'
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -377,7 +378,7 @@ function InvitesTab() {
     fetch_()
   }
   const copy = (token: string) => {
-    const url = `${window.location.origin}/invite/${token}`
+    const url = `${browserOrigin()}/invite/${token}`
     const done = () => { setCopied(token); toast.success('Invite link copied!'); setTimeout(() => setCopied(null), 2000) }
     if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, () => toast.error('Could not copy. Press and hold the link to copy it.'))
     else toast.error('Copying is not available here.')

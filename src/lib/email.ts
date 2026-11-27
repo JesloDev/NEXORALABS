@@ -1,11 +1,12 @@
 import { Resend } from 'resend'
+import { siteUrl } from '@/lib/site-url'
 
 // Resend is optional in dev. When no key is configured we log the email
 // payload so every flow (verification, notifications, approvals) still
 // completes end-to-end.
 const apiKey = process.env.RESEND_API_KEY?.trim()
 const fromEmail = process.env.RESEND_FROM_EMAIL || 'NEXORALABS <no-reply@nexoralabs.com>'
-export const baseUrl = process.env.APP_BASE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'
+export const baseUrl = siteUrl()
 
 export const resend = apiKey ? new Resend(apiKey) : null
 
